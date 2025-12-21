@@ -7,11 +7,11 @@ set_target_properties(basedlib PROPERTIES
 	VERSION 0.1
 	DEBUG_POSTFIX "dbg"
 )
-target_compile_definitions(basedlib PRIVATE
-	$<$<CONFIG:Debug>:BASEDLIB_DEBUG>
-)
 
-target_sources(basedlib PRIVATE
-	$<$<CONFIG:Debug>:src/Debug.cpp>
+set(BASED_SOURCES
+	FileDebug.cpp
 )
+list(TRANSFORM BASED_SOURCES PREPEND src/)
+
+target_sources(basedlib PRIVATE ${BASED_SOURCES})
 target_include_directories(basedlib PUBLIC include/)
