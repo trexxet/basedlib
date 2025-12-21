@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <cstdio>
 
 namespace Basedlib {
 
@@ -8,7 +8,7 @@ struct FileDebug {
 	FILE* f = nullptr;
 
 	FileDebug (const char *filename);
-	void print (const std::string& str);
+	void print (const char *str);
 	~FileDebug ();
 };
 

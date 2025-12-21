@@ -1,6 +1,5 @@
 #include "Basedlib/FileDebug.hpp"
 
-#include <cstdio>
 #include <format>
 #include <stdexcept>
 
@@ -13,9 +12,9 @@ FileDebug::FileDebug (const char *filename) {
 		throw std::runtime_error (std::format ("Can't open {} for write", filename));
 }
 
-void FileDebug::print (const std::string& str) {
-	if (f) {
-		std::fprintf (f, str.c_str());
+void FileDebug::print (const char *str) {
+	if (f && str) {
+		std::fprintf (f, str);
 		fflush(f);
 	}
 }
