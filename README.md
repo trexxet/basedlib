@@ -2,7 +2,11 @@
 
 Some stuff designed to be used with [Based Engine](https://gitlab.com/trexxet/basedengine) and [Basedline](https://gitlab.com/trexxet/basedline).
 
-### Feature goals
+### Current features
 * Debug logger with file output
 * Thread-safe FIFO queue
-* Autocompletion Trie
+* Overloaded pattern
+* Debounce timer
+
+### Feature goals
+* Autocompletion Trie (implemented in BE, will move here later)
