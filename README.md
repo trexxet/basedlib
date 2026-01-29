@@ -5,6 +5,7 @@ Some stuff designed to be used with [Based Engine](https://gitlab.com/trexxet/ba
 ### Current features
 * Debug logger with file output
 * Thread-safe FIFO queue
+* Append-only ring buffer
 * Overloaded pattern
 * Debounce timer
 
