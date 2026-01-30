@@ -6,8 +6,9 @@ Some stuff designed to be used with [Based Engine](https://gitlab.com/trexxet/ba
 * Debug logger with file output
 * Thread-safe FIFO queue
 * Append-only ring buffer
-* Overloaded pattern
 * Debounce timer
+* Overloaded pattern
+* Macros for non-retarded move/copy constructor/assignment declaration
 
 ### Feature goals
 * Autocompletion Trie (implemented in BE, will move here later)
