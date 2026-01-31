@@ -1,1 +1,2 @@
-#
+add_executable(basedlib_multibyte_test testMultibyteString.cpp)
+target_link_libraries(basedlib_multibyte_test basedlib)
