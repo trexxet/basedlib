@@ -10,7 +10,7 @@
 # include <cwchar>
 #endif
 
-namespace Basedlib {
+namespace Basedlib::Text {
 
 // TODO: use zstring_view when available
 

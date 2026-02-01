@@ -1,4 +1,4 @@
-#include "Basedlib/MultibyteString.hpp"
+#include "Basedlib/Text/Multibyte.hpp"
 
 #include <cstdio>
 #include <print>
@@ -19,11 +19,11 @@ int main() {
 	std::print ("{}", mbstr0);
 
 	RESET_STDOUT_ORIENTATION();
-	std::wstring wcstr = Basedlib::mbs_to_wcs (mbstr0);
-	Basedlib::print_wcs (wcstr);
+	std::wstring wcstr = Basedlib::Text::mbs_to_wcs (mbstr0);
+	Basedlib::Text::print_wcs (wcstr);
 
 	RESET_STDOUT_ORIENTATION();
-	std::string mbstr1 = Basedlib::wcs_to_mbs (wcstr);
+	std::string mbstr1 = Basedlib::Text::wcs_to_mbs (wcstr);
 	std::print ("{}", mbstr1);
 
 	std::print ("End!");

@@ -3,5 +3,5 @@ function(add_basedlib_test test_name)
 	target_link_libraries(${test_name} basedlib)
 endfunction()
 
-add_basedlib_test(basedlib_test_multibyte testMultibyteString.cpp)
+add_basedlib_test(basedlib_test_multibyte testMultibyte.cpp)
 add_basedlib_test(basedlib_test_logfile testLogFile.cpp)
