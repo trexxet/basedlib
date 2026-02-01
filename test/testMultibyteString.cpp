@@ -15,7 +15,7 @@ int main() {
 	std::setlocale (LC_ALL, "C.utf8");
 #endif
 
-	const std::string mbstr0 = "Hello, World! Привет, мир! 你好, 世界!\n";
+	const std::string mbstr0 = "Hello, World! Привет, мир! 你好, 世界! 🚀\n";
 	std::print ("{}", mbstr0);
 
 	RESET_STDOUT_ORIENTATION();
