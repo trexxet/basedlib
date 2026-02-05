@@ -6,24 +6,12 @@
 #if defined(__WIN32)
 # include <windows.h>
 #else
-# include <cstdio>
 # include <cwchar>
 #endif
 
 namespace Basedlib::Text {
 
 // TODO: use zstring_view when available
-
-/// @brief Print wide string view
-/// @note Don't forget to check & set stdout orientation on Linux before printing
-/// @warning Must be null-terminated
-void print_wcs (std::wstring_view wcs) {
-#ifdef __WIN32
-	WriteConsoleW (GetStdHandle (STD_OUTPUT_HANDLE), wcs.data(), static_cast<DWORD> (wcs.size()), nullptr, nullptr);
-#else
-	std::wprintf (L"%ls", wcs.data());
-#endif
-}
 
 /// @brief Convert multibyte UTF-8 string view to wide string
 /// @warning Must be null-terminated
