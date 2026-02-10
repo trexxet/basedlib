@@ -11,7 +11,7 @@
 # define RESET_STDOUT_ORIENTATION() { std::freopen (nullptr, "w", stdout); }
 #endif
 
-int main() {
+int main () {
 #if !defined(__WIN32)
 	std::setlocale (LC_ALL, "C.utf8");
 #endif

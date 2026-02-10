@@ -5,3 +5,4 @@ endfunction()
 
 add_basedlib_test(basedlib_test_multibyte testMultibyte.cpp)
 add_basedlib_test(basedlib_test_logfile testLogFile.cpp)
+add_basedlib_test(basedlib_test_ringbuffer testRingBuffer.cpp)
