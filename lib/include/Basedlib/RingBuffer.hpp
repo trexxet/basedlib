@@ -15,6 +15,7 @@ public:
 	inline size_t capacity () const { return cap; }
 	inline size_t size () const { return data.size(); }
 	inline bool full () const { return size() == cap; }
+	inline bool empty () const { return size() == 0; }
 
 	void push (T val) {
 		if (full()) [[likely]] data[head] = std::move (val);
@@ -26,6 +27,12 @@ public:
 		if (idx >= size()) [[unlikely]] throw std::out_of_range ("idx >= size()");
 		if (full()) [[likely]] idx = wrap (head + idx);
 		return data[idx];
+	}
+
+	const T& back () const {
+		if (empty()) [[unlikely]] throw std::out_of_range ("size() == 0");
+		if (full()) [[likely]] return data[(head > 0 ? head : cap) - 1];
+		return data[head - 1];
 	}
 
 	RingBuffer (size_t capacity) : cap (capacity) { data.reserve (capacity); }
