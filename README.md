@@ -8,6 +8,7 @@ Some stuff designed to be used with [Based Engine](https://gitlab.com/trexxet/ba
 * Append-only ring buffer
 * Debounce timer
 * Overloaded pattern
+* Function pointer wrapper for functoins & non-capturing lambdas
 * Cross-platform multibyte string <-> wide string converters
 * Macros for non-retarded move/copy constructor/assignment declaration
 
