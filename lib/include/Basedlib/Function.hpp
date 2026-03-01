@@ -4,8 +4,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "Class.hpp"
-
 namespace Basedlib {
 
 // TODO: use std::function_ptr when available
@@ -18,19 +16,19 @@ struct Function<Ret(Args...)> {
 
 	Signature* ptr = nullptr;
 
-	Function () = default;
+	constexpr Function () = default;
 	template<typename F> requires std::is_convertible_v<F, Signature*>
-	Function (F fn) : ptr (fn) { }
+	constexpr Function (F fn) : ptr (fn) { }
 
 	template<typename F> requires std::is_convertible_v<F, Signature*>
-	Function& operator= (F fn) { ptr = fn; return *this; }
+	constexpr Function& operator= (F fn) { ptr = fn; return *this; }
 
-	Ret operator() (Args... args) const {
+	constexpr Ret operator() (Args... args) const {
 		if constexpr (std::is_void_v<Ret>) ptr (std::forward<Args> (args)...);
 		else return ptr (std::forward<Args> (args)...);
 	}
 
-	explicit operator bool() const { return ptr != nullptr; }
+	constexpr explicit operator bool() const { return ptr != nullptr; }
 };
 
 }
