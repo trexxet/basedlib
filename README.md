@@ -3,6 +3,9 @@
 Some stuff designed to be used with [Based Engine](https://gitlab.com/trexxet/basedengine) and [Basedline](https://gitlab.com/trexxet/basedline).
 
 ### Current features
+* Event-driven FSM without jump tables
+* Simple static reflection for type names & values (using `__PRETTY_FUNCTION__`)
+* Enum static reflection for getting field name (simplier alternative to magic_enum)
 * Debug logger with file output
 * Thread-safe FIFO queue
 * Append-only ring buffer
