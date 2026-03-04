@@ -3,6 +3,7 @@
 #include <array>
 #include <concepts>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 #include "Meta.hpp"
@@ -15,6 +16,7 @@ namespace Basedlib {
 
 template <typename T, size_t maxIndex = 32> requires std::is_enum_v<T>
 struct PrettyEnum {
+	using Enum = T;
 	using Meta = Meta<T>;
 
 private:
@@ -49,5 +51,12 @@ public:
 	static constexpr std::string_view to_string (T value) { return names[idx (value)]; }
 	static constexpr std::string_view to_scoped_string (T value) { return scoped_names[idx (value)]; }
 };
+
+template <typename> struct IsPrettyEnum : std::false_type {};
+template <typename T, size_t N>
+struct IsPrettyEnum<PrettyEnum<T, N>> : std::true_type {};
+
+template <typename T>
+concept PrettyEnumT = IsPrettyEnum<T>::value;
 
 }

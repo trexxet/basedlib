@@ -6,14 +6,12 @@ enum class States {
 	ST_A,
 	ST_B,
 	ST_C,
-	ST_D,
-	COUNT
+	ST_D
 };
 
 enum class Events {
 	EV_A, // States: A->B, B->C, C->D, D not permitted
-	EV_B, // States: A->A (ignored), B->A, C->B, D->C
-	COUNT
+	EV_B  // States: A->A (ignored), B->A, C->B, D->C
 };
 
 struct Context {
@@ -21,8 +19,10 @@ struct Context {
 	size_t evB_count = 0;
 };
 
-// Note that callbacks won't have a Context argument if Context is nullptr_t (as by default)
-using FSM = Basedlib::FSM <States, Events, Context>;
+/* Note that callbacks won't have a Context argument if Context is nullptr_t (as by default).
+ * If enums has > 32 items, the range should be increased in the Enum template arg (as in PrettyEnum).
+ */
+using FSM = Basedlib::FSM::FSM <Basedlib::FSM::Enum<States>, Basedlib::FSM::Enum<Events>, Context>;
 
 // Event callback as a separate function
 FSM::EventCallbackResult fsm_ev_a (FSM* fsm, Context* ctx) {
@@ -50,16 +50,16 @@ int main () {
 
 	FSM fsm = FSM::make (States::ST_A, &ctx,
 		// State callbacks as non-capturing lambdas
-		FSM::state_cb (States::ST_A, {
+		FSM::state_cb <States::ST_A> ({
 			.on_enter = [](Context* ctx) { std::print ("Enter ST_A\n"); },
 			.on_exit = [](Context* ctx) { std::print ("Exit ST_A\n"); }
 		}),
-		FSM::state_cb (States::ST_B, {.on_enter = fsm_st_b_enter, .on_exit = fsm_st_b_exit}),
+		FSM::state_cb <States::ST_B> ({.on_enter = fsm_st_b_enter, .on_exit = fsm_st_b_exit}),
 		// Callbacks can be safely omitted
-		FSM::state_cb (States::ST_C, {.on_enter = [](Context* ctx) { std::print ("Enter ST_C\n"); }}),
-		FSM::event_cb (Events::EV_A, {.on_event = fsm_ev_a}),
+		FSM::state_cb <States::ST_C> ({.on_enter = [](Context* ctx) { std::print ("Enter ST_C\n"); }}),
+		FSM::event_cb <Events::EV_A> ({.on_event = fsm_ev_a}),
 		// Event callback as a non-capturing lambda
-		FSM::event_cb (Events::EV_B, {.on_event = [](FSM* fsm, Context* ctx) -> FSM::EventCallbackResult {
+		FSM::event_cb <Events::EV_B> ({.on_event = [](FSM* fsm, Context* ctx) -> FSM::EventCallbackResult {
 			std::print ("EV_B\n");
 			ctx->evB_count++;
 

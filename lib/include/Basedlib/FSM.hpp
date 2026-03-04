@@ -5,37 +5,39 @@
 #include <optional>
 
 #include "Function.hpp"
+#include "PrettyEnum.hpp"
 
-namespace Basedlib {
+namespace Basedlib::FSM {
+
+template <typename T, size_t maxIndex = 32>
+using Enum = PrettyEnum<T, maxIndex>;
 
 // TODO: ensure proper constexpr usage
 
-template <typename T>
-concept FSMEnum = std::is_scoped_enum_v<T> && requires { T::COUNT; };
-
-template <FSMEnum StateEnum, FSMEnum EventEnum, typename Context = std::nullptr_t>
+template <PrettyEnumT States, PrettyEnumT Events, typename Context = std::nullptr_t>
 class FSM {
-	StateEnum _state;
-	Context* ctx;
+public:
+	using State = States::Enum;
+	using Event = Events::Enum;
 
-	template <FSMEnum FE>
-	static constexpr size_t idx (FE i) { return static_cast<size_t> (i); }
+private:
+	State _state;
+	Context* ctx;
+	static constexpr bool hasContext = !std::is_same_v <Context, std::nullptr_t>;
 
 public:
-	const StateEnum& state = _state;
+	const State& state = _state;
 
-	using StateCallback = std::conditional_t<
-		std::is_same_v<Context, std::nullptr_t>,
-		Function <void ()>,
-		Function <void (Context*)>
+	using StateCallback = std::conditional_t <hasContext,
+		Function <void (Context*)>,
+		Function <void ()>
 	>;
 
 	// return new state or nullopt if event is not permitted in current state
-	using EventCallbackResult = std::optional<StateEnum>;
-	using EventCallback = std::conditional_t<
-		std::is_same_v<Context, std::nullptr_t>,
-		Function <EventCallbackResult (FSM*)>,
-		Function <EventCallbackResult (FSM*, Context*)>
+	using EventCallbackResult = std::optional<State>;
+	using EventCallback = std::conditional_t <hasContext,
+		Function <EventCallbackResult (FSM*, Context*)>,
+		Function <EventCallbackResult (FSM*)>
 	>;
 
 	struct StateCallbacks {
@@ -44,7 +46,7 @@ public:
 	};
 
 	struct StateCallbacksInitializer {
-		StateEnum st;
+		State st;
 		StateCallbacks cb;
 	};
 
@@ -53,15 +55,17 @@ public:
 	};
 
 	struct EventCallbacksInitializer {
-		EventEnum ev;
+		Event ev;
 		EventCallbacks cb;
 	};
 
-	static consteval StateCallbacksInitializer state_cb (StateEnum st, StateCallbacks cb) { return {st, cb}; }
-	static consteval EventCallbacksInitializer event_cb (EventEnum ev, EventCallbacks cb) { return {ev, cb}; }
+	template <State st>
+	static consteval StateCallbacksInitializer state_cb (StateCallbacks cb) { return {st, cb}; }
+	template <Event ev>
+	static consteval EventCallbacksInitializer event_cb (EventCallbacks cb) { return {ev, cb}; }
 	
-	using StatesCallbacks = std::array<StateCallbacks, idx(StateEnum::COUNT)>;
-	using EventsCallbacks = std::array<EventCallbacks, idx(EventEnum::COUNT)>;
+	using StatesCallbacks = std::array<StateCallbacks, States::size>;
+	using EventsCallbacks = std::array<EventCallbacks, Events::size>;
 
 private:
 	StatesCallbacks statesCallbacks;
@@ -69,49 +73,47 @@ private:
 
 	inline void call_state_cb (StateCallback& cb) {
 		if (!cb) return;
-		if constexpr (std::same_as<Context, std::nullptr_t>) { cb(); }
-		else { cb (ctx); }
+		if constexpr (hasContext) cb (ctx); else cb ();
 	}
 
 	inline EventCallbackResult call_event_cb (EventCallback& cb) {
 		if (!cb) return std::nullopt;
-		if constexpr (std::same_as<Context, std::nullptr_t>) { return cb (this); }
-		else { return cb (this, ctx); }
+		if constexpr (hasContext) return cb (this, ctx); else return cb (this);
 	}
 
-	inline void enter_state (StateEnum st) {
+	inline void enter_state (State st) {
 		_state = st;
-		call_state_cb (statesCallbacks[idx(_state)].on_enter);
+		call_state_cb (statesCallbacks[States::idx(_state)].on_enter);
 	}
 
 	inline void exit_state () {
-		call_state_cb (statesCallbacks[idx(_state)].on_exit);
+		call_state_cb (statesCallbacks[States::idx(_state)].on_exit);
 	}
 
-	constexpr FSM (StateEnum initState, Context* ctx, StatesCallbacks&& statesCallbacks, EventsCallbacks&& eventsCallbacks)
+	constexpr FSM (State initState, Context* ctx, StatesCallbacks&& statesCallbacks, EventsCallbacks&& eventsCallbacks)
 		:_state (initState), ctx (ctx), statesCallbacks (std::move (statesCallbacks)), eventsCallbacks (std::move (eventsCallbacks)) {
 		enter_state (initState);
 	}
 
 public:
-	void switch_state (StateEnum next) {
+	void switch_state (State next) {
 		if (_state == next) return;
 		exit_state();
 		enter_state (next);
 	}
 
-	inline EventCallbackResult event (EventEnum ev) {
-		return call_event_cb (eventsCallbacks[idx(ev)].on_event);
+	inline EventCallbackResult event (Event ev) {
+		return call_event_cb (eventsCallbacks[Events::idx(ev)].on_event);
 	}
 
 	template <typename... Ts>
-	static constexpr FSM make (StateEnum initState, Context* ctx, Ts... xs) {
+	static constexpr FSM make (State initState, Context* ctx, Ts... xs) {
 		StatesCallbacks s {};
 		EventsCallbacks e {};
 
 		auto add = [&]<typename T> (T x) {
-			if constexpr (std::same_as<T, StateCallbacksInitializer>) { s[idx(x.st)] = x.cb; }
-			else if constexpr (std::same_as<T, EventCallbacksInitializer>) { e[idx(x.ev)] = x.cb; }
+			if constexpr (std::same_as<T, StateCallbacksInitializer>) { s[States::idx(x.st)] = x.cb; }
+			else if constexpr (std::same_as<T, EventCallbacksInitializer>) { e[Events::idx(x.ev)] = x.cb; }
 			else { static_assert (false, "Wrong FSM callback initializer!"); }
 		};
 		(add(xs), ...);
