@@ -22,6 +22,11 @@ struct Meta {
 		size_t end = name.find_first_of (";]", start);
 		name = name.substr (start, end - start);
 
+		// Cut type conversion, if any
+		start = name.rfind (')');
+		if (start != std::string_view::npos)
+			name = name.substr (start + 1);
+
 		if constexpr (!scoped) {
 			size_t pos = name.rfind("::");
 			if (pos != std::string_view::npos)

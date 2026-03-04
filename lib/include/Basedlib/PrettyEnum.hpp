@@ -7,35 +7,43 @@
 
 #include "Meta.hpp"
 
-/* This would work only for enums that are:
- * 1) Dense (values go from 0 to N - 1)
- * 2) Have the last value _bl_count = N
- */
+/* This would work only for dense enums (values go from 0 to N - 1) */
 
-#define Bl_PrettyEnum(name, ...) enum class name { __VA_ARGS__, _bl_count }
+/* TODO: use C++26 static reflection when available */
 
 namespace Basedlib {
 
-template <typename T>
-concept PrettyEnumT = std::is_scoped_enum_v<T> && requires { T::_bl_count; };
-
-template <PrettyEnumT T>
+template <typename T, size_t maxIndex = 32> requires std::is_enum_v<T>
 struct PrettyEnum {
 	using Meta = Meta<T>;
 
+private:
+	template<size_t i>
+	static consteval bool is_valid_idx () {
+		constexpr char c = Meta::template v_name<val (i)>()[0];
+		return !(c >= '0' && c <= '9');
+	}
+
+	template<size_t... i>
+	static consteval size_t count_valid_idxs (std::index_sequence<i...>) {
+		return (static_cast<size_t> (is_valid_idx<i>()) + ...);
+	}
+
+public:
 	static constexpr size_t idx (T i) { return static_cast<size_t> (i); }
 	static constexpr T val (size_t i) { return static_cast<T> (i); }
-	static constexpr size_t size () { return idx (T::_bl_count); }
-	static constexpr bool has_idx (size_t i) { return i < size(); }
+	static constexpr size_t size = count_valid_idxs (std::make_index_sequence<maxIndex>());
+	static constexpr bool has_idx (size_t i) { return i < size; }
 
 private:
 	template<bool scoped>
 	static constexpr auto get_names = [] <std::size_t... I> (std::index_sequence<I...>) {
 		return std::array { Meta::template v_name<val (I), scoped>()... };
 	};
-	static constexpr auto idx_sequence = std::make_index_sequence <size()> ();
-	static constexpr auto names = get_names<false> (idx_sequence);
-	static constexpr auto scoped_names = get_names<true> (idx_sequence);
+
+	static constexpr auto validIdxSequence = std::make_index_sequence <size> ();
+	static constexpr auto names = get_names<false> (validIdxSequence);
+	static constexpr auto scoped_names = get_names<true> (validIdxSequence);
 
 public:
 	static constexpr std::string_view to_string (T value) { return names[idx (value)]; }
