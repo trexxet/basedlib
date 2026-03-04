@@ -1,5 +1,6 @@
 #include "Basedlib/PrettyEnum.hpp"
 
+#include <cstdio>
 #include <print>
 
 // Works for both scoped and unscoped enums

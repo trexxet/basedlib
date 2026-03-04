@@ -1,5 +1,6 @@
 #include "Basedlib/FSM.hpp"
 
+#include <cstdio>
 #include <print>
 
 enum class States {
@@ -23,6 +24,11 @@ struct Context {
  * If enums has > 32 items, the range should be increased in the Enum template arg (as in PrettyEnum).
  */
 using FSM = Basedlib::FSM::FSM <Basedlib::FSM::Enum<States>, Basedlib::FSM::Enum<Events>, Context>;
+/* This also creates the following type aliases:
+ * FSM::State = States
+ * FSM::Event = Events
+ * FSM::EventCallbackResult = std::optional<States>
+ */
 
 // Event callback as a separate function
 FSM::EventCallbackResult fsm_ev_a (FSM* fsm, Context* ctx) {
@@ -76,15 +82,25 @@ int main () {
 		}})
 	);
 
-	fsm.event (Events::EV_A);
-	fsm.event (Events::EV_A);
-	fsm.event (Events::EV_A);
-	if (!fsm.event (Events::EV_A))
-		std::print ("EV_A not permitted in ST_D!\n");
-	fsm.event (Events::EV_B);
-	fsm.event (Events::EV_B);
-	fsm.event (Events::EV_B);
-	fsm.event (Events::EV_B);
+	auto trigger_event = [&fsm] (Events ev) {
+		if (!fsm.event (ev))
+			std::print ("Event {} is not permitted in state {}!\n",
+				Basedlib::PrettyEnum<Events>::to_string (ev),
+				Basedlib::PrettyEnum<States>::to_string (fsm.state)
+			);
+	};
+
+	std::print ("Enter 1 to trigger EV_A, 2 to trigger EV_B, 0 to stop\n");
+	bool running = true;
+	while (running) {
+		int input = std::getchar();
+		if (input == '\n') continue;
+		switch (input - '0') {
+			case 1: trigger_event (Events::EV_A); break;
+			case 2: trigger_event (Events::EV_B); break;
+			default: running = false; break;
+		}
+	}
 
 	std::print ("Event count EV_A: {} EV_B: {}\n", ctx.evA_count, ctx.evB_count);
 
