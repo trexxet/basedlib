@@ -4,6 +4,7 @@
 #include <concepts>
 #include <optional>
 
+#include "Class.hpp"
 #include "Function.hpp"
 #include "PrettyEnum.hpp"
 
@@ -11,8 +12,6 @@ namespace Basedlib::FSM {
 
 template <typename T, size_t maxIndex = 32>
 using Enum = PrettyEnum<T, maxIndex>;
-
-// TODO: ensure proper constexpr usage
 
 template <PrettyEnumT States, PrettyEnumT Events, typename Context = std::nullptr_t>
 class FSM {
@@ -26,7 +25,7 @@ private:
 	static constexpr bool hasContext = !std::is_same_v <Context, std::nullptr_t>;
 
 public:
-	const State& state = _state;
+	State state() const { return _state; }
 
 	using StateCallback = std::conditional_t <hasContext,
 		Function <void (Context*)>,
@@ -45,54 +44,55 @@ public:
 		StateCallback on_exit;
 	};
 
-	struct StateCallbacksInitializer {
-		State st;
-		StateCallbacks cb;
-	};
-
 	struct EventCallbacks {
 		EventCallback on_event;
 	};
 
-	struct EventCallbacksInitializer {
-		Event ev;
-		EventCallbacks cb;
+	using StatesCallbacks = std::array<StateCallbacks, States::size>;
+	using EventsCallbacks = std::array<EventCallbacks, Events::size>;
+	struct Callbacks {
+		StatesCallbacks states;
+		EventsCallbacks events;
 	};
 
 	template <State st>
-	static consteval StateCallbacksInitializer state_cb (StateCallbacks cb) { return {st, cb}; }
+	static consteval auto state_cb (StateCallbacks cb) {
+		return [cb] (Callbacks& cbs) consteval {
+			cbs.states[States::idx(st)] = cb;
+		};
+	}
 	template <Event ev>
-	static consteval EventCallbacksInitializer event_cb (EventCallbacks cb) { return {ev, cb}; }
-	
-	using StatesCallbacks = std::array<StateCallbacks, States::size>;
-	using EventsCallbacks = std::array<EventCallbacks, Events::size>;
+	static consteval auto event_cb (EventCallbacks cb) {
+		return [cb] (Callbacks& cbs) consteval {
+			cbs.events[Events::idx(ev)] = cb;
+		};
+	}
 
 private:
-	StatesCallbacks statesCallbacks;
-	EventsCallbacks eventsCallbacks;
+	Callbacks callbacks;
 
-	inline void call_state_cb (StateCallback& cb) {
+	template <class Initializer>
+	static consteval bool is_cb_initializer() {
+		return requires (Initializer init, Callbacks& cb) { init (cb); };
+	}
+
+	void call_state_cb (const StateCallback& cb) {
 		if (!cb) return;
 		if constexpr (hasContext) cb (ctx); else cb ();
 	}
 
-	inline EventCallbackResult call_event_cb (EventCallback& cb) {
+	EventCallbackResult call_event_cb (const EventCallback& cb) {
 		if (!cb) return std::nullopt;
 		if constexpr (hasContext) return cb (this, ctx); else return cb (this);
 	}
 
-	inline void enter_state (State st) {
+	void enter_state (State st) {
 		_state = st;
-		call_state_cb (statesCallbacks[States::idx(_state)].on_enter);
+		call_state_cb (callbacks.states[States::idx(_state)].on_enter);
 	}
 
-	inline void exit_state () {
-		call_state_cb (statesCallbacks[States::idx(_state)].on_exit);
-	}
-
-	constexpr FSM (State initState, Context* ctx, StatesCallbacks&& statesCallbacks, EventsCallbacks&& eventsCallbacks)
-		:_state (initState), ctx (ctx), statesCallbacks (std::move (statesCallbacks)), eventsCallbacks (std::move (eventsCallbacks)) {
-		enter_state (initState);
+	void exit_state () {
+		call_state_cb (callbacks.states[States::idx(_state)].on_exit);
 	}
 
 public:
@@ -102,26 +102,23 @@ public:
 		enter_state (next);
 	}
 
-	inline EventCallbackResult event (Event ev) {
-		return call_event_cb (eventsCallbacks[Events::idx(ev)].on_event);
+	EventCallbackResult event (Event ev) {
+		return call_event_cb (callbacks.events[Events::idx(ev)].on_event);
 	}
 
-	template <typename... Ts>
-	static constexpr FSM make (State initState, Context* ctx, Ts... xs) {
-		StatesCallbacks s {};
-		EventsCallbacks e {};
-
-		auto add = [&]<typename T> (T x) {
-			if constexpr (std::same_as<T, StateCallbacksInitializer>) { s[States::idx(x.st)] = x.cb; }
-			else if constexpr (std::same_as<T, EventCallbacksInitializer>) { e[Events::idx(x.ev)] = x.cb; }
-			else { static_assert (false, "Wrong FSM callback initializer!"); }
-		};
-		(add(xs), ...);
-
-		return FSM (initState, ctx, std::move(s), std::move(e));
+	template <typename... Initializers> requires (is_cb_initializer<Initializers>() && ...)
+	static consteval Callbacks make_callbacks (Initializers... cbInits) {
+		Callbacks cb {};
+		(cbInits (cb), ...);
+		return cb;
 	}
 
 	FSM () = delete;
+	FSM (State initState, Context* ctx, Callbacks callbacks)
+		:_state (initState), ctx (ctx), callbacks (std::move (callbacks)) {
+		enter_state (initState);
+	}
+	BASED_CLASS_NO_COPY_DEFAULT_MOVE (FSM);
 };
 
 }

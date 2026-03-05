@@ -35,8 +35,8 @@ FSM::EventCallbackResult fsm_ev_a (FSM* fsm, Context* ctx) {
 	std::print ("EV_A\n");
 	ctx->evA_count++;
 
-	States newState = fsm->state;
-	switch (fsm->state) {
+	States newState = fsm->state();
+	switch (fsm->state()) {
 		case States::ST_A: newState = States::ST_B; break;
 		case States::ST_B: newState = States::ST_C; break;
 		case States::ST_C: newState = States::ST_D; break;
@@ -54,7 +54,7 @@ void fsm_st_b_exit (Context *ctx) { std::print ("Exit ST_B\n"); }
 int main () {
 	Context ctx {};
 
-	FSM fsm = FSM::make (States::ST_A, &ctx,
+	FSM fsm (States::ST_A, &ctx, FSM::make_callbacks (
 		// State callbacks as non-capturing lambdas
 		FSM::state_cb <States::ST_A> ({
 			.on_enter = [](Context* ctx) { std::print ("Enter ST_A\n"); },
@@ -69,8 +69,8 @@ int main () {
 			std::print ("EV_B\n");
 			ctx->evB_count++;
 
-			States newState = fsm->state;
-			switch (fsm->state) {
+			States newState = fsm->state();
+			switch (fsm->state()) {
 				case States::ST_B: newState = States::ST_A; break;
 				case States::ST_C: newState = States::ST_B; break;
 				case States::ST_D: newState = States::ST_C; break;
@@ -80,13 +80,13 @@ int main () {
 			fsm->switch_state (newState);
 			return newState;
 		}})
-	);
+	));
 
 	auto trigger_event = [&fsm] (Events ev) {
 		if (!fsm.event (ev))
 			std::print ("Event {} is not permitted in state {}!\n",
 				Basedlib::PrettyEnum<Events>::to_string (ev),
-				Basedlib::PrettyEnum<States>::to_string (fsm.state)
+				Basedlib::PrettyEnum<States>::to_string (fsm.state())
 			);
 	};
 
