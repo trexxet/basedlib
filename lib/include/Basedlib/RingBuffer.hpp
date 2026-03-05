@@ -10,12 +10,12 @@ class RingBuffer {
 	std::vector<T> data;
 	size_t head = 0, cap;
 
-	inline size_t wrap (size_t pos) const { return pos >= cap ? pos % cap : pos; }
+	size_t wrap (size_t pos) const noexcept { return pos >= cap ? pos % cap : pos; }
 public:
-	inline size_t capacity () const { return cap; }
-	inline size_t size () const { return data.size(); }
-	inline bool full () const { return size() == cap; }
-	inline bool empty () const { return size() == 0; }
+	size_t capacity () const noexcept { return cap; }
+	size_t size () const noexcept { return data.size(); }
+	bool full () const noexcept { return size() == cap; }
+	bool empty () const noexcept { return size() == 0; }
 
 	void push (T val) {
 		if (full()) [[likely]] data[head] = std::move (val);

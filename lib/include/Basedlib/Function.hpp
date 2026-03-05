@@ -18,17 +18,17 @@ struct Function<Ret(Args...)> {
 
 	constexpr Function () = default;
 	template<typename F> requires std::is_convertible_v<F, Signature*>
-	constexpr Function (F fn) : ptr (fn) { }
+	constexpr Function (F fn) noexcept : ptr (fn) { }
 
 	template<typename F> requires std::is_convertible_v<F, Signature*>
-	constexpr Function& operator= (F fn) { ptr = fn; return *this; }
+	constexpr Function& operator= (F fn) noexcept { ptr = fn; return *this; }
 
 	constexpr Ret operator() (Args... args) const {
 		if constexpr (std::is_void_v<Ret>) ptr (std::forward<Args> (args)...);
 		else return ptr (std::forward<Args> (args)...);
 	}
 
-	constexpr explicit operator bool() const { return ptr != nullptr; }
+	constexpr explicit operator bool() const noexcept { return ptr != nullptr; }
 };
 
 }

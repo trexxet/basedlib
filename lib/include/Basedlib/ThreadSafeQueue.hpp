@@ -8,7 +8,7 @@ namespace Basedlib {
 
 template <typename T>
 class ThreadSafeQueue {
-	std::mutex mtx;
+	mutable std::mutex mtx;
 	std::queue<T> q;
 
 public:
@@ -26,7 +26,7 @@ public:
 		return top;
 	}
 
-	bool empty () {
+	bool empty () const {
 		std::scoped_lock lock (mtx);
 		return q.empty();
 	}

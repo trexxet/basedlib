@@ -32,10 +32,10 @@ private:
 	}
 
 public:
-	static constexpr size_t idx (T i) { return static_cast<size_t> (i); }
-	static constexpr T val (size_t i) { return static_cast<T> (i); }
+	static constexpr size_t idx (T i) noexcept { return static_cast<size_t> (i); }
+	static constexpr T val (size_t i) noexcept { return static_cast<T> (i); }
 	static constexpr size_t size = count_valid_idxs (std::make_index_sequence<maxIndex>());
-	static constexpr bool has_idx (size_t i) { return i < size; }
+	static constexpr bool has_idx (size_t i) noexcept { return i < size; }
 
 private:
 	template<bool scoped>

@@ -24,15 +24,15 @@ inline void print_wcs (std::wstring_view wcs) {
 #endif
 }
 
-inline bool is_high_surrogate (wchar_t wch) {
+constexpr bool is_high_surrogate (wchar_t wch) noexcept {
 	return 0xD800 <= wch && wch <= 0xDBFF;
 }
 
-inline bool is_low_surrogate (wchar_t wch) {
+constexpr bool is_low_surrogate (wchar_t wch) noexcept {
 	return 0xDC00 <= wch && wch <= 0xDFFF;
 }
 
-inline char32_t from_surrogate (wchar_t high, wchar_t low) {
+constexpr char32_t from_surrogate (wchar_t high, wchar_t low) noexcept {
 	return 0x10000 + ((high & 0x03FF) << 10) + (low & 0x03FF);
 }
 

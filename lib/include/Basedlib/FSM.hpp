@@ -29,7 +29,7 @@ private:
 	static constexpr bool hasContext = !std::is_same_v <Context, std::nullptr_t>;
 
 public:
-	State state() const { return _state; }
+	State state() const noexcept { return _state; }
 
 	using StateCallback = std::conditional_t <hasContext,
 		Function <void (Context*)>,

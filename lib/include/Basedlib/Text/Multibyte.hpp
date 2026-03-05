@@ -15,7 +15,7 @@ namespace Basedlib::Text {
 
 /// @brief Convert multibyte UTF-8 string view to wide string
 /// @warning Must be null-terminated
-std::wstring mbs_to_wcs (std::string_view mbs) {
+inline std::wstring mbs_to_wcs (std::string_view mbs) {
 	if (mbs.empty()) [[unlikely]] return L"";
 #if defined(__WIN32)
 	int len = MultiByteToWideChar (CP_UTF8, 0, mbs.data(), mbs.size(), nullptr, 0);
@@ -35,7 +35,7 @@ std::wstring mbs_to_wcs (std::string_view mbs) {
 
 /// @brief Convert wide string view to multibyte UTF-8 string
 /// @warning Must be null-terminated
-std::string wcs_to_mbs (std::wstring_view wcs) {
+inline std::string wcs_to_mbs (std::wstring_view wcs) {
 	if (wcs.empty()) [[unlikely]] return "";
 #if defined(__WIN32)
 	int len = WideCharToMultiByte (CP_UTF8, 0, wcs.data(), wcs.size(), nullptr, 0, nullptr, nullptr);

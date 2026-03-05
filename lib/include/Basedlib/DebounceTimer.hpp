@@ -10,7 +10,7 @@ class DebounceTimer {
 
 	Clock::duration duration;
 	Tp last;
-	inline static Tp now () noexcept { return Clock::now(); }
+	static Tp now () noexcept { return Clock::now(); }
 
 public:
 	void trigger () noexcept { last = now(); }
