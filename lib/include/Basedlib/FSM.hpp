@@ -2,7 +2,9 @@
 
 #include <array>
 #include <concepts>
+#include <format>
 #include <optional>
+#include <string_view>
 
 #include "Class.hpp"
 #include "Function.hpp"
@@ -11,9 +13,11 @@
 namespace Basedlib::FSM {
 
 template <typename T, size_t maxIndex = 32>
-using Enum = PrettyEnum<T, maxIndex>;
+using Enum = PrettyEnum <T, maxIndex>;
 
-template <PrettyEnumT States, PrettyEnumT Events, typename Context = std::nullptr_t>
+using LogCallbackT = Function <void (std::string_view)>;
+
+template <PrettyEnumT States, PrettyEnumT Events, typename Context = std::nullptr_t, LogCallbackT logCallback = LogCallbackT {}>
 class FSM {
 public:
 	using State = States::Enum;
@@ -38,6 +42,7 @@ public:
 		Function <EventCallbackResult (FSM*, Context*)>,
 		Function <EventCallbackResult (FSM*)>
 	>;
+	static constexpr auto EventNotPermitted = std::nullopt;
 
 	struct StateCallbacks {
 		StateCallback on_enter;
@@ -98,12 +103,29 @@ private:
 public:
 	void switch_state (State next) {
 		if (_state == next) return;
+
+		if constexpr (logCallback)
+			logCallback (std::format ("Switch state {} -> {}", States::to_string (_state), States::to_string (next)));
+
 		exit_state();
 		enter_state (next);
 	}
 
 	EventCallbackResult event (Event ev) {
-		return call_event_cb (callbacks.events[Events::idx(ev)].on_event);
+		const EventCallback& cb = callbacks.events[Events::idx(ev)].on_event;
+
+		if constexpr (logCallback) {
+			std::string_view evStr = Events::to_string (ev);
+			logCallback (std::format ("Event {}", evStr));
+			
+			EventCallbackResult result = call_event_cb (cb);
+			
+			if (!result)
+				logCallback (std::format ("Event {} is not permitted in state {}", evStr, States::to_string (_state)));
+			return result;
+		}
+
+		return call_event_cb (cb);
 	}
 
 	template <typename... Initializers> requires (is_cb_initializer<Initializers>() && ...)
