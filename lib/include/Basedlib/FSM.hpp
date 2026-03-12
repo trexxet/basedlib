@@ -31,26 +31,23 @@ private:
 public:
 	State state() const noexcept { return _state; }
 
-	using StateCallback = std::conditional_t <hasContext,
-		Function <void (Context*)>,
-		Function <void ()>
-	>;
+	using StateCallback = std::conditional_t <hasContext, void (Context*), void ()>;
 
 	// return new state or nullopt if event is not permitted in current state
 	using EventCallbackResult = std::optional<State>;
 	using EventCallback = std::conditional_t <hasContext,
-		Function <EventCallbackResult (FSM*, Context*)>,
-		Function <EventCallbackResult (FSM*)>
+		EventCallbackResult (FSM*, Context*),
+		EventCallbackResult (FSM*)
 	>;
 	static constexpr auto EventNotPermitted = std::nullopt;
 
 	struct StateCallbacks {
-		StateCallback on_enter;
-		StateCallback on_exit;
+		Function<StateCallback> on_enter;
+		Function<StateCallback> on_exit;
 	};
 
 	struct EventCallbacks {
-		EventCallback on_event;
+		Function<EventCallback> on_event;
 	};
 
 	using StatesCallbacks = std::array<StateCallbacks, States::size>;
@@ -81,12 +78,12 @@ private:
 		return requires (Initializer init, Callbacks& cb) { init (cb); };
 	}
 
-	void call_state_cb (const StateCallback& cb) {
+	void call_state_cb (const Function<StateCallback>& cb) {
 		if (!cb) return;
 		if constexpr (hasContext) cb (ctx); else cb ();
 	}
 
-	EventCallbackResult call_event_cb (const EventCallback& cb) {
+	EventCallbackResult call_event_cb (const Function<EventCallback>& cb) {
 		if (!cb) return std::nullopt;
 		if constexpr (hasContext) return cb (this, ctx); else return cb (this);
 	}
@@ -112,7 +109,7 @@ public:
 	}
 
 	EventCallbackResult event (Event ev) {
-		const EventCallback& cb = callbacks.events[Events::idx(ev)].on_event;
+		const Function<EventCallback>& cb = callbacks.events[Events::idx(ev)].on_event;
 
 		if constexpr (logCallback) {
 			std::string_view evStr = Events::to_string (ev);

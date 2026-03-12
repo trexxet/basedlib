@@ -30,6 +30,8 @@ using FSM = Basedlib::FSM::FSM <Basedlib::FSM::Enum<States>, Basedlib::FSM::Enum
  * FSM::State = States
  * FSM::Event = Events
  * FSM::EventCallbackResult = std::optional<States>
+ * FSM::StateCallback = void (Context*) or void ()
+ * FSM::EventCallback = EventCallbackResult (FSM*, Context*) or EventCallbackResult (FSM*)
  * Also, the following const is declared:
  * FSM::EventNotPermitted = std::nullopt
  */
