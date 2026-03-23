@@ -71,9 +71,9 @@ int main () {
 		FSM::state_cb <States::ST_B> ({.on_enter = fsm_st_b_enter, .on_exit = fsm_st_b_exit}),
 		// Callbacks can be safely omitted
 		FSM::state_cb <States::ST_C> ({.on_enter = [] (Context* ctx) { print_callback ("enter ST_C"); }}),
-		FSM::event_cb <Events::EV_A> ({.on_event = fsm_ev_a}),
+		FSM::event_cb <Events::EV_A> (fsm_ev_a),
 		// Event callback as a non-capturing lambda
-		FSM::event_cb <Events::EV_B> ({.on_event = [] (FSM* fsm, Context* ctx) -> FSM::EventCallbackResult {
+		FSM::event_cb <Events::EV_B> ([] (FSM* fsm, Context* ctx) -> FSM::EventCallbackResult {
 			print_callback ("event EV_B");
 			ctx->evB_count++;
 
@@ -87,7 +87,7 @@ int main () {
 
 			fsm->switch_state (newState);
 			return newState;
-		}})
+		})
 	));
 
 	auto trigger_event = [&fsm] (Events ev) {

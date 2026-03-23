@@ -46,9 +46,7 @@ public:
 		Function<StateCallback> on_exit;
 	};
 
-	struct EventCallbacks {
-		Function<EventCallback> on_event;
-	};
+	using EventCallbacks = Function<EventCallback>;
 
 	using StatesCallbacks = std::array<StateCallbacks, States::size>;
 	using EventsCallbacks = std::array<EventCallbacks, Events::size>;
@@ -109,14 +107,14 @@ public:
 	}
 
 	EventCallbackResult event (Event ev) {
-		const Function<EventCallback>& cb = callbacks.events[Events::idx(ev)].on_event;
+		const Function<EventCallback>& cb = callbacks.events[Events::idx(ev)];
 
 		if constexpr (logCallback) {
 			std::string_view evStr = Events::to_string (ev);
 			logCallback (std::format ("Event {}", evStr));
-			
+
 			EventCallbackResult result = call_event_cb (cb);
-			
+
 			if (!result)
 				logCallback (std::format ("Event {} is not permitted in state {}", evStr, States::to_string (_state)));
 			return result;
@@ -134,7 +132,7 @@ public:
 
 	FSM () = delete;
 	FSM (State initState, Context* ctx, Callbacks callbacks)
-		:_state (initState), ctx (ctx), callbacks (std::move (callbacks)) {
+		: _state (initState), ctx (ctx), callbacks (std::move (callbacks)) {
 		enter_state (initState);
 	}
 	BASED_CLASS_NO_COPY_DEFAULT_MOVE (FSM);
