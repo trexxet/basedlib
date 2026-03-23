@@ -25,11 +25,12 @@ public:
 
 private:
 	State _state;
-	Context* ctx;
+	Context* _ctx;
 	static constexpr bool hasContext = !std::is_same_v <Context, std::nullptr_t>;
 
 public:
 	State state() const noexcept { return _state; }
+	Context* ctx() const noexcept { return _ctx; }
 
 	using StateCallback = std::conditional_t <hasContext, void (Context*), void ()>;
 
@@ -78,12 +79,12 @@ private:
 
 	void call_state_cb (const Function<StateCallback>& cb) {
 		if (!cb) return;
-		if constexpr (hasContext) cb (ctx); else cb ();
+		if constexpr (hasContext) cb (_ctx); else cb ();
 	}
 
 	EventCallbackResult call_event_cb (const Function<EventCallback>& cb) {
 		if (!cb) return std::nullopt;
-		if constexpr (hasContext) return cb (this, ctx); else return cb (this);
+		if constexpr (hasContext) return cb (this, _ctx); else return cb (this);
 	}
 
 	void enter_state (State st) {
@@ -132,7 +133,7 @@ public:
 
 	FSM () = delete;
 	FSM (State initState, Context* ctx, Callbacks callbacks)
-		: _state (initState), ctx (ctx), callbacks (std::move (callbacks)) {
+		: _state (initState), _ctx (ctx), callbacks (std::move (callbacks)) {
 		enter_state (initState);
 	}
 	BASED_CLASS_NO_COPY_DEFAULT_MOVE (FSM);
