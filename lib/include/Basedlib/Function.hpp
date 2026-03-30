@@ -28,7 +28,7 @@ struct Function<Ret(Args...)> {
 		else return ptr (std::forward<Args> (args)...);
 	}
 
-	constexpr explicit operator bool() const noexcept { return ptr != nullptr; }
+	constexpr explicit operator bool () const noexcept { return ptr != nullptr; }
 };
 
 }
