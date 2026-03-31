@@ -3,6 +3,7 @@
 #include <array>
 #include <concepts>
 #include <format>
+#include <optional>
 #include <print>
 #include <string>
 #include <string_view>
@@ -12,9 +13,16 @@
 
 namespace Basedtest {
 
+template <typename T>
+concept OutputT = std::equality_comparable <T>;
+
+template <OutputT Output>
 struct Result {
 	bool ok;
 	std::string msg;
+
+	struct Failed { Output expected, got; };
+	std::optional <Failed> failed;
 
 	explicit operator bool () const noexcept { return ok; }
 	int rc () const noexcept { return static_cast <int> (!ok); }
@@ -25,10 +33,17 @@ struct Result {
 	static Result fail (std::string msg) {
 		return Result { .ok = false, .msg = std::move (msg) };
 	}
+	[[nodiscard]]
+	static Result fail (std::string msg, Output expected, Output got) {
+		return Result { .ok = false, .msg = std::move (msg),
+			.failed = Failed { std::move (expected), std::move (got) }
+		};
+	}
 };
 
+template <OutputT Output>
 struct Fails {
-	std::vector <Result> items;
+	std::vector <Result <Output>> items;
 
 	explicit operator bool () const noexcept { return !items.empty(); }
 	int rc () const noexcept { return static_cast <int> (!items.empty()); }
@@ -40,57 +55,61 @@ struct Fails {
 	auto end ()   const noexcept { return items.end(); }
 };
 
-template <typename Input, std::equality_comparable Output>
+template <typename Input, OutputT Output>
 struct Test {
 	std::string_view name;
 	Input input;
 	Output expected;
 	Basedlib::Function <Output (const Input&)> fn;
 
+	using ResultType = Result <Output>;
+
 	[[nodiscard]]
-	Result run () const {
+	ResultType run () const {
 		if (!fn) [[unlikely]]
-			return Result::fail (std::format ("Function not specified for test case '{}'", name));
-		if (fn (input) == expected) [[likely]]
-			return Result::success();
-		return Result::fail (std::format ("Test case '{}' failed", name));
+			return ResultType::fail (std::format ("Function not specified for test case '{}'", name));
+		Output got = fn (input);
+		if (got == expected) [[likely]]
+			return ResultType::success();
+		return ResultType::fail (std::format ("Test case '{}' failed", name), expected, std::move (got));
 	}
 };
 
-template <typename Input, std::equality_comparable Output, typename Fn>
+template <typename Input, OutputT Output, typename Fn>
 requires std::is_convertible_v<Fn, Basedlib::Function <Output (const Input&)>>
 Test (std::string_view, Input, Output, Fn) -> Test <Input, Output>;
 
-template <typename Input, std::equality_comparable Output, size_t N>
+template <typename Input, OutputT Output, size_t N>
 struct Suite {
 	using TestType = Test <Input, Output>;
+	using ResultType = TestType::ResultType;
 
 	std::string_view name;
 	std::array <TestType, N> tests;
 	std::size_t size() const noexcept { return tests.size(); }
 
 	[[nodiscard]]
-	Result run (std::string_view testName) const {
+	ResultType run (std::string_view testName) const {
 		for (const TestType& test : tests)
 			if (test.name == testName)
 				return test.run();
-		return Result::fail (std::format ("Test case '{}' not found in suite '{}'", testName, name));
+		return ResultType::fail (std::format ("Test case '{}' not found in suite '{}'", testName, name));
 	}
 
 	template <bool doPrints = false>
 	[[nodiscard]]
-	Fails run () const {
-		Fails fails;
+	Fails<Output> run () const {
+		Fails<Output> fails;
 		fails.items.reserve (size());
 		for (const TestType& test : tests) {
-			Result result = test.run();
+			ResultType result = test.run();
 			if (!result) fails.items.emplace_back (std::move (result));
 		}
 
 		if constexpr (doPrints) {
 			if (fails) {
 				std::print ("Suite '{}': {} tests failed out of {}:\n", name, fails.size(), size());
-				for (const Result& result : fails)
+				for (const ResultType& result : fails)
 					std::print (" - {}\n", result.msg);
 			} else {
 				std::print ("Suite '{}': all {} tests passed\n", name, size());
@@ -104,11 +123,11 @@ struct Suite {
 	Suite () = delete;
 };
 
-template <typename Input, std::equality_comparable Output, size_t N>
+template <typename Input, OutputT Output, size_t N>
 Suite (std::string_view name, std::array<Test <Input, Output>, N> tests) -> Suite <Input, Output, N>;
 
-template <typename Input, std::equality_comparable Output, typename... Ts>
-consteval auto tests (Ts&&... args) -> std::array <Test <Input, Output>, sizeof... (Ts)> {
+template <typename Input, OutputT Output, typename... Ts>
+consteval auto tests (Ts&&... args) {
 	return std::array <Test <Input, Output>, sizeof... (Ts)> { std::forward<Ts> (args)... };
 }
 
