@@ -71,7 +71,19 @@ struct Test {
 		Output got = fn (input);
 		if (got == expected) [[likely]]
 			return ResultType::success();
-		return ResultType::fail (std::format ("Test case '{}' failed", name), expected, std::move (got));
+
+		auto to_str = [] (const Output& val) -> std::string {
+			if constexpr (requires { val.to_string(); })
+				return std::string (val.to_string());
+			else if constexpr (std::is_arithmetic_v <Output>)
+				return std::to_string (val);
+			else return "<unprintable>";
+		};
+
+		return ResultType::fail (
+			std::format ("Test case '{}' failed: expected '{}', got '{}'", name, to_str (expected), to_str (got)),
+			expected, std::move (got)
+		);
 	}
 };
 

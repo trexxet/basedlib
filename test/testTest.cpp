@@ -1,10 +1,14 @@
 #include "Basedtest/Basedtest.hpp"
 
-#include <print>
+#include <format>
+#include <string>
 
 struct Foo {
 	int x, y;
 	bool operator== (const Foo&) const = default;
+	std::string to_string() const {
+		return std::format ("{{x = {}, y = {}}}", x, y);
+	}
 };
 
 Foo bar (const int& a) {
@@ -21,7 +25,8 @@ int g (const int& x) {
 
 int main () {
 	Basedtest::Suite successSuite ("SuccessSuite", Basedtest::tests <int, Foo> (
-		Basedtest::Test {"1", 1, Foo {1, -1}, bar}
+		Basedtest::Test {"1", 1, Foo {1, -1}, bar},
+		Basedtest::Test {"2", 2, Foo {2, -2}, bar}
 	));
 
 	Basedtest::Fails successSuiteFails = successSuite.run <true> ();
