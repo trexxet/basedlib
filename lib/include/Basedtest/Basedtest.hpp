@@ -16,6 +16,14 @@ namespace Basedtest {
 template <typename T>
 concept OutputT = std::equality_comparable <T>;
 
+template <typename Input, OutputT Output>
+using TestFunction = Basedlib::Function <Output (const Input&)>;
+
+template <typename Input, typename Output, typename Fn>
+concept TestFunctionT = std::convertible_to <Fn, TestFunction <Input, Output>>;
+
+/// @brief Result stores the test result: pass flag and non-pass information
+/// (message, expected & actual result)
 template <OutputT Output>
 struct Result {
 	bool ok;
@@ -41,6 +49,7 @@ struct Result {
 	}
 };
 
+/// @brief Fails is a vector of suite's failed tests. Empty if all suite's tests passed.
 template <OutputT Output>
 struct Fails {
 	std::vector <Result <Output>> items;
@@ -55,12 +64,13 @@ struct Fails {
 	auto end ()   const noexcept { return items.end(); }
 };
 
+/// @brief Test is a self-sufficient test case, that can be used with or without the Suite.
 template <typename Input, OutputT Output>
 struct Test {
 	std::string_view name;
 	Input input;
 	Output expected;
-	Basedlib::Function <Output (const Input&)> fn;
+	TestFunction <Input, Output> fn;
 
 	using ResultType = Result <Output>;
 
@@ -88,9 +98,27 @@ struct Test {
 };
 
 template <typename Input, OutputT Output, typename Fn>
-requires std::is_convertible_v<Fn, Basedlib::Function <Output (const Input&)>>
+requires TestFunctionT <Input, Output, Fn>
 Test (std::string_view, Input, Output, Fn) -> Test <Input, Output>;
 
+/// @brief Case is a special case of Test. It can be used only within Suite, so
+/// multiple Cases share the same test function.
+template <typename Input, OutputT Output>
+struct Case {
+	std::string_view name;
+	Input input;
+	Output expected;
+
+	consteval auto make_test (TestFunction <Input, Output> fn) const noexcept {
+		return Test <Input, Output> {name, input, expected, fn};
+	}
+};
+
+template <typename Input, OutputT Output>
+Case (std::string_view, Input, Output) -> Case <Input, Output>;
+
+/// @brief Suite is a suite of multiple Tests/Cases of same Input/Output type that
+/// can be run all together or by name.
 template <typename Input, OutputT Output, size_t N>
 struct Suite {
 	using TestType = Test <Input, Output>;
@@ -98,7 +126,7 @@ struct Suite {
 
 	std::string_view name;
 	std::array <TestType, N> tests;
-	std::size_t size() const noexcept { return tests.size(); }
+	constexpr std::size_t size() const noexcept { return tests.size(); }
 
 	[[nodiscard]]
 	ResultType run (std::string_view testName) const {
@@ -131,16 +159,27 @@ struct Suite {
 		return fails;
 	}
 
-	Suite (std::string_view name, std::array<TestType, N> tests) : name (name), tests (std::move (tests)) { }
+	consteval Suite (std::string_view name, std::array<TestType, N> tests) : name (name), tests (std::move (tests)) { }
 	Suite () = delete;
 };
 
 template <typename Input, OutputT Output, size_t N>
 Suite (std::string_view name, std::array<Test <Input, Output>, N> tests) -> Suite <Input, Output, N>;
 
+/// @brief Fill suite with Tests
 template <typename Input, OutputT Output, typename... Ts>
+requires (std::same_as <Ts, Test <Input, Output>> && ...)
 consteval auto tests (Ts&&... args) {
 	return std::array <Test <Input, Output>, sizeof... (Ts)> { std::forward<Ts> (args)... };
+}
+
+/// @brief Fill suite with Cases running Fn
+template <typename Input, OutputT Output, auto Fn, typename... Ts>
+requires (std::same_as <Ts, Case <Input, Output>> && ...) && TestFunctionT <Input, Output, decltype (Fn)>
+consteval auto tests (Ts&&... args) {
+	return std::array <Test <Input, Output>, sizeof... (Ts)> {
+		std::forward<Ts> (args).make_test (Fn)...
+	};
 }
 
 }

@@ -24,9 +24,10 @@ int g (const int& x) {
 }
 
 int main () {
-	Basedtest::Suite successSuite ("SuccessSuite", Basedtest::tests <int, Foo> (
-		Basedtest::Test {"1", 1, Foo {1, -1}, bar},
-		Basedtest::Test {"2", 2, Foo {2, -2}, bar}
+	Basedtest::Suite successSuite ("SuccessSuite", Basedtest::tests <int, Foo, bar> (
+		Basedtest::Case {"1", 1, Foo {1, -1}},
+		Basedtest::Case {"2", 2, Foo {2, -2}},
+		Basedtest::Case {"1337", 1337, Foo {1337, -1337}}
 	));
 
 	Basedtest::Fails successSuiteFails = successSuite.run <true> ();
