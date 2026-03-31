@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <concepts>
 #include <format>
 #include <print>
@@ -41,7 +42,7 @@ struct Fails {
 
 template <typename Input, std::equality_comparable Output>
 struct Test {
-	std::string name;
+	std::string_view name;
 	Input input;
 	Output expected;
 	Basedlib::Function <Output (const Input&)> fn;
@@ -56,17 +57,16 @@ struct Test {
 	}
 };
 
-template <typename Input, std::equality_comparable Output>
+template <typename Input, std::equality_comparable Output, typename Fn>
+requires std::is_convertible_v<Fn, Basedlib::Function <Output (const Input&)>>
+Test (std::string_view, Input, Output, Fn) -> Test <Input, Output>;
+
+template <typename Input, std::equality_comparable Output, size_t N>
 struct Suite {
 	using TestType = Test <Input, Output>;
 
-	std::string name;
-	std::vector <TestType> tests;
-
-	void add (TestType test) {
-		tests.emplace_back (std::move (test));
-	}
-
+	std::string_view name;
+	std::array <TestType, N> tests;
 	std::size_t size() const noexcept { return tests.size(); }
 
 	[[nodiscard]]
@@ -100,8 +100,16 @@ struct Suite {
 		return fails;
 	}
 
-	Suite (std::string_view name) : name (name) { }
+	Suite (std::string_view name, std::array<TestType, N> tests) : name (name), tests (std::move (tests)) { }
 	Suite () = delete;
 };
+
+template <typename Input, std::equality_comparable Output, size_t N>
+Suite (std::string_view name, std::array<Test <Input, Output>, N> tests) -> Suite <Input, Output, N>;
+
+template <typename Input, std::equality_comparable Output, typename... Ts>
+consteval auto tests (Ts&&... args) -> std::array <Test <Input, Output>, sizeof... (Ts)> {
+	return std::array <Test <Input, Output>, sizeof... (Ts)> { std::forward<Ts> (args)... };
+}
 
 }

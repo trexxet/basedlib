@@ -7,12 +7,11 @@ int f (const int& x) {
 }
 
 int main () {
-	Basedtest::Suite <int, int> failSuite ("FailSuite");
-
-	failSuite.add ({"1", 1, 2, f});
-	failSuite.add ({"-1", -1, 0, f});
-	failSuite.add ({"0", 0, 1, f});
-
+	Basedtest::Suite failSuite ("FailSuite", Basedtest::tests <int, int> (
+		Basedtest::Test {"1", 1, 2, f},
+		Basedtest::Test {"-1", -1, 0, f},
+		Basedtest::Test {"0", 0, 1, f}
+	));
 	Basedtest::Fails fails = failSuite.run <true> ();
 
 	return fails.rc();
