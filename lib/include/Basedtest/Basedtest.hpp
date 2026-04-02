@@ -17,10 +17,10 @@ template <typename T>
 concept OutputT = std::equality_comparable <T>;
 
 template <typename Input, OutputT Output>
-using TestFunction = Basedlib::Function <Output (const Input&)>;
+using ValueTestFunction = Basedlib::Function <Output (const Input&)>;
 
-template <typename Input, typename Output, typename Fn>
-concept TestFunctionT = std::convertible_to <Fn, TestFunction <Input, Output>>;
+template <typename Fn, typename Input, typename Output>
+concept ValueTestFunctionT = std::convertible_to <Fn, ValueTestFunction <Input, Output>>;
 
 /// @brief Result stores the test result: pass flag and non-pass information
 /// (message, expected & actual result)
@@ -64,13 +64,14 @@ struct Fails {
 	auto end ()   const noexcept { return items.end(); }
 };
 
-/// @brief Test is a self-sufficient test case, that can be used with or without the Suite.
+/// @brief ValueTest is a test that can be used with or without the Suite.
+/// ValueTests runs fn(const input&) and compares it's result with expected.
 template <typename Input, OutputT Output>
-struct Test {
+struct ValueTest {
 	std::string_view name;
 	Input input;
 	Output expected;
-	TestFunction <Input, Output> fn;
+	ValueTestFunction <Input, Output> fn;
 
 	using ResultType = Result <Output>;
 
@@ -86,7 +87,7 @@ struct Test {
 			if constexpr (requires { val.to_string(); })
 				return std::string (val.to_string());
 			else if constexpr (std::is_arithmetic_v <Output>)
-				return std::to_string (val);
+				return std::format ("{}", val);
 			else return "<unprintable>";
 		};
 
@@ -97,31 +98,36 @@ struct Test {
 	}
 };
 
-template <typename Input, OutputT Output, typename Fn>
-requires TestFunctionT <Input, Output, Fn>
-Test (std::string_view, Input, Output, Fn) -> Test <Input, Output>;
+template <typename Input, OutputT Output, ValueTestFunctionT <Input, Output> Fn>
+ValueTest (std::string_view, Input, Output, Fn) -> ValueTest <Input, Output>;
 
-/// @brief Case is a special case of Test. It can be used only within Suite, so
+template <typename T, typename Input, typename Output>
+concept ValueTestT = std::same_as <T, ValueTest<Input, Output>>;
+
+/// @brief ValueCase is a special case of ValueTest. It can be used only within Suite, so
 /// multiple Cases share the same test function.
 template <typename Input, OutputT Output>
-struct Case {
+struct ValueCase {
 	std::string_view name;
 	Input input;
 	Output expected;
 
-	consteval auto make_test (TestFunction <Input, Output> fn) const noexcept {
-		return Test <Input, Output> {name, input, expected, fn};
+	consteval auto make_test (ValueTestFunction <Input, Output> fn) const noexcept {
+		return ValueTest <Input, Output> {name, input, expected, fn};
 	}
 };
 
 template <typename Input, OutputT Output>
-Case (std::string_view, Input, Output) -> Case <Input, Output>;
+ValueCase (std::string_view, Input, Output) -> ValueCase <Input, Output>;
+
+template <typename T, typename Input, typename Output>
+concept ValueCaseT = std::same_as <T, ValueCase<Input, Output>>;
 
 /// @brief Suite is a suite of multiple Tests/Cases of same Input/Output type that
 /// can be run all together or by name.
 template <typename Input, OutputT Output, size_t N>
 struct Suite {
-	using TestType = Test <Input, Output>;
+	using TestType = ValueTest <Input, Output>;
 	using ResultType = TestType::ResultType;
 
 	std::string_view name;
@@ -164,20 +170,19 @@ struct Suite {
 };
 
 template <typename Input, OutputT Output, size_t N>
-Suite (std::string_view name, std::array<Test <Input, Output>, N> tests) -> Suite <Input, Output, N>;
+Suite (std::string_view name, std::array<ValueTest <Input, Output>, N> tests) -> Suite <Input, Output, N>;
 
 /// @brief Fill suite with Tests
-template <typename Input, OutputT Output, typename... Ts>
-requires (std::same_as <Ts, Test <Input, Output>> && ...)
+template <typename Input, OutputT Output, ValueTestT <Input, Output>... Ts>
 consteval auto tests (Ts&&... args) {
-	return std::array <Test <Input, Output>, sizeof... (Ts)> { std::forward<Ts> (args)... };
+	return std::array <ValueTest <Input, Output>, sizeof... (Ts)> { std::forward<Ts> (args)... };
 }
 
 /// @brief Fill suite with Cases running Fn
-template <typename Input, OutputT Output, auto Fn, typename... Ts>
-requires (std::same_as <Ts, Case <Input, Output>> && ...) && TestFunctionT <Input, Output, decltype (Fn)>
+template <typename Input, OutputT Output, auto Fn, ValueCaseT <Input, Output>... Ts>
+requires ValueTestFunctionT <decltype (Fn), Input, Output>
 consteval auto tests (Ts&&... args) {
-	return std::array <Test <Input, Output>, sizeof... (Ts)> {
+	return std::array <ValueTest <Input, Output>, sizeof... (Ts)> {
 		std::forward<Ts> (args).make_test (Fn)...
 	};
 }

@@ -52,11 +52,10 @@ public:
 	static constexpr std::string_view to_scoped_string (T value) { return scoped_names[idx (value)]; }
 };
 
-template <typename> struct IsPrettyEnum : std::false_type {};
+template <typename> struct is_PrettyEnum : std::false_type {};
 template <typename T, size_t N>
-struct IsPrettyEnum<PrettyEnum<T, N>> : std::true_type {};
-
+struct is_PrettyEnum<PrettyEnum<T, N>> : std::true_type {};
 template <typename T>
-concept PrettyEnumT = IsPrettyEnum<T>::value;
+concept PrettyEnumT = is_PrettyEnum<T>::value;
 
 }
