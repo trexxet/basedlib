@@ -10,8 +10,17 @@
 #include <vector>
 
 #include "Basedlib/Function.hpp"
+#include "Basedlib/PrettyEnum.hpp"
 
 namespace Basedtest {
+
+enum class ResultError {
+	OK,
+	WRONG_VALUE,
+	NO_FN,
+	NO_TESTCASE_IN_SUITE
+};
+using PrettyResultError = Basedlib::PrettyEnum <ResultError>;
 
 template <typename T>
 concept OutputT = std::equality_comparable <T>;
@@ -26,33 +35,65 @@ concept ValueTestFunctionT = std::convertible_to <Fn, ValueTestFunction <Input, 
 /// (message, expected & actual result)
 template <OutputT Output>
 struct Result {
-	bool ok;
-	std::string msg;
+	ResultError err;
 
 	struct Failed { Output expected, got; };
 	std::optional <Failed> failed;
 
-	explicit operator bool () const noexcept { return ok; }
-	int rc () const noexcept { return static_cast <int> (!ok); }
+	explicit operator bool () const noexcept { return err == ResultError::OK; }
+	int rc () const noexcept { return PrettyResultError::idx (err); }
 
 	[[nodiscard]]
-	static Result success () { return Result { .ok = true }; }
+	static Result success () { return Result { .err = ResultError::OK }; }
 	[[nodiscard]]
-	static Result fail (std::string msg) {
-		return Result { .ok = false, .msg = std::move (msg) };
+	static Result fail (ResultError err) {
+		return Result { .err = err };
 	}
 	[[nodiscard]]
-	static Result fail (std::string msg, Output expected, Output got) {
-		return Result { .ok = false, .msg = std::move (msg),
+	static Result fail (ResultError err, Output expected, Output got) {
+		return Result {
+			.err = err,
 			.failed = Failed { std::move (expected), std::move (got) }
 		};
+	}
+};
+
+template <OutputT Output>
+struct Failure {
+	Result <Output> result;
+	std::string_view testName;
+	std::string_view suiteName;
+
+	std::string to_string() const {
+		switch (result.err) {
+			case ResultError::WRONG_VALUE: {
+				auto to_str = [] (const Output& val) -> std::string {
+					if constexpr (requires { val.to_string(); })
+						return std::string (val.to_string());
+					else if constexpr (std::is_arithmetic_v <Output>)
+						return std::format ("{}", val);
+					else return "<unprintable>";
+				};
+				return std::format (
+					"Test case '{}' failed: expected '{}', got '{}'",
+					testName,
+					to_str (result.failed->expected),
+					to_str (result.failed->got)
+				);
+			}
+			case ResultError::NO_FN:
+				return std::format ("Function not specified for test case '{}'", testName);
+			case ResultError::NO_TESTCASE_IN_SUITE:
+				return std::format ("Test case '{}' not found in suite '{}'", testName, suiteName);
+		}
+		return "OK";
 	}
 };
 
 /// @brief Fails is a vector of suite's failed tests. Empty if all suite's tests passed.
 template <OutputT Output>
 struct Fails {
-	std::vector <Result <Output>> items;
+	std::vector <Failure <Output>> items;
 
 	explicit operator bool () const noexcept { return !items.empty(); }
 	int rc () const noexcept { return static_cast <int> (!items.empty()); }
@@ -78,23 +119,11 @@ struct ValueTest {
 	[[nodiscard]]
 	ResultType run () const {
 		if (!fn) [[unlikely]]
-			return ResultType::fail (std::format ("Function not specified for test case '{}'", name));
+			return ResultType::fail (ResultError::NO_FN);
 		Output got = fn (input);
 		if (got == expected) [[likely]]
 			return ResultType::success();
-
-		auto to_str = [] (const Output& val) -> std::string {
-			if constexpr (requires { val.to_string(); })
-				return std::string (val.to_string());
-			else if constexpr (std::is_arithmetic_v <Output>)
-				return std::format ("{}", val);
-			else return "<unprintable>";
-		};
-
-		return ResultType::fail (
-			std::format ("Test case '{}' failed: expected '{}', got '{}'", name, to_str (expected), to_str (got)),
-			expected, std::move (got)
-		);
+		return ResultType::fail (ResultError::WRONG_VALUE, expected, std::move (got));
 	}
 };
 
@@ -129,6 +158,7 @@ template <typename Input, OutputT Output, size_t N>
 struct Suite {
 	using TestType = ValueTest <Input, Output>;
 	using ResultType = TestType::ResultType;
+	using FailureType = Failure <Output>;
 
 	std::string_view name;
 	std::array <TestType, N> tests;
@@ -139,7 +169,7 @@ struct Suite {
 		for (const TestType& test : tests)
 			if (test.name == testName)
 				return test.run();
-		return ResultType::fail (std::format ("Test case '{}' not found in suite '{}'", testName, name));
+		return ResultType::fail (ResultError::NO_TESTCASE_IN_SUITE);
 	}
 
 	template <bool doPrints = false>
@@ -149,14 +179,16 @@ struct Suite {
 		fails.items.reserve (size());
 		for (const TestType& test : tests) {
 			ResultType result = test.run();
-			if (!result) fails.items.emplace_back (std::move (result));
+			if (!result) fails.items.emplace_back (
+				Failure { .result = std::move (result), .testName = test.name, .suiteName = name }
+			);
 		}
 
 		if constexpr (doPrints) {
 			if (fails) {
 				std::print ("Suite '{}': {} tests failed out of {}:\n", name, fails.size(), size());
-				for (const ResultType& result : fails)
-					std::print (" - {}\n", result.msg);
+				for (const FailureType& fail : fails)
+					std::print (" - {}\n", fail.to_string());
 			} else {
 				std::print ("Suite '{}': all {} tests passed\n", name, size());
 			}

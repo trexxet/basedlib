@@ -19,7 +19,7 @@ bool b (const int& x) { return x > 0; }
 
 Basedtest::Result<bool> tester (const Foo& d) {
 	if (!(d.x == -d.y))
-		return Basedtest::Result<bool>::fail("no");
+		return Basedtest::Result<bool>::fail (Basedtest::ResultError::WRONG_VALUE);
 	return Basedtest::Result<bool>::success();
 }
 
