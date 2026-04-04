@@ -10,22 +10,14 @@
 #include <vector>
 
 #include "Basedlib/Function.hpp"
-#include "Basedlib/PrettyEnum.hpp"
 
 namespace Basedtest {
-
-enum class ResultError {
-	OK,
-	WRONG_VALUE,
-	NO_FN
-};
-using PrettyResultError = Basedlib::PrettyEnum <ResultError>;
 
 template <typename T>
 concept OutputT = std::equality_comparable <T>;
 
 template <typename Input, OutputT Output>
-using ValueTestFunction = Basedlib::Function <Output (const Input&)>;
+using ValueTestFunction = Basedlib::FunctionRef <Output (const Input&)>;
 
 template <typename Fn, typename Input, typename Output>
 concept ValueTestFunctionT = std::convertible_to <Fn, ValueTestFunction <Input, Output>>;
@@ -34,43 +26,37 @@ concept ValueTestFunctionT = std::convertible_to <Fn, ValueTestFunction <Input, 
 /// (message, expected & actual result)
 template <OutputT Output>
 struct Result {
-	ResultError err;
+	bool ok;
 
 	struct Failed { Output expected, got; };
 	std::optional <Failed> failed;
 
-	explicit operator bool () const noexcept { return err == ResultError::OK; }
-	int rc () const noexcept { return PrettyResultError::idx (err); }
+	explicit operator bool () const noexcept { return ok; }
+	int rc () const noexcept { return static_cast <int> (!ok); }
 
 	[[nodiscard]]
-	static Result success () { return Result { .err = ResultError::OK }; }
+	static Result success () { return Result { .ok = true }; }
 	[[nodiscard]]
-	static Result fail (ResultError err) {
-		return Result { .err = err };
-	}
+	static Result fail () { return Result { .ok = false }; }
 	[[nodiscard]]
-	static Result fail (ResultError err, Output expected, Output got) {
+	static Result fail (Output expected, Output got) {
 		return Result {
-			.err = err,
+			.ok = false,
 			.failed = Failed { std::move (expected), std::move (got) }
 		};
 	}
 
 	std::string to_string() const {
-		switch (err) {
-			case ResultError::WRONG_VALUE: {
-				auto to_str = [] (const Output& val) -> std::string {
-					if constexpr (requires { val.to_string(); })
-						return std::string (val.to_string());
-					else if constexpr (std::is_arithmetic_v <Output>)
-						return std::format ("{}", val);
-					else return "<unprintable>";
-				};
-				return std::format ("FAILED: expected '{}', got '{}'", to_str (failed->expected), to_str (failed->got));
-			}
-			case ResultError::NO_FN: return "FAILED: function not specified";
-		}
-		return "OK";
+		if (ok) return "OK";
+
+		auto to_str = [] (const Output& val) -> std::string {
+			if constexpr (requires { val.to_string(); })
+				return std::string (val.to_string());
+			else if constexpr (std::is_arithmetic_v <Output>)
+				return std::format ("{}", val);
+			else return "<unprintable>";
+		};
+		return std::format ("FAILED: expected '{}', got '{}'", to_str (failed->expected), to_str (failed->got));
 	}
 };
 
@@ -112,12 +98,10 @@ struct ValueTest {
 
 	[[nodiscard]]
 	ResultType run () const {
-		if (!fn) [[unlikely]]
-			return ResultType::fail (ResultError::NO_FN);
 		Output got = fn (input);
 		if (got == expected) [[likely]]
 			return ResultType::success();
-		return ResultType::fail (ResultError::WRONG_VALUE, expected, std::move (got));
+		return ResultType::fail (expected, std::move (got));
 	}
 };
 
