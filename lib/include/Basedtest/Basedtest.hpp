@@ -17,8 +17,7 @@ namespace Basedtest {
 enum class ResultError {
 	OK,
 	WRONG_VALUE,
-	NO_FN,
-	NO_TESTCASE_IN_SUITE
+	NO_FN
 };
 using PrettyResultError = Basedlib::PrettyEnum <ResultError>;
 
@@ -56,16 +55,9 @@ struct Result {
 			.failed = Failed { std::move (expected), std::move (got) }
 		};
 	}
-};
-
-template <OutputT Output>
-struct Failure {
-	Result <Output> result;
-	std::string_view testName;
-	std::string_view suiteName;
 
 	std::string to_string() const {
-		switch (result.err) {
+		switch (err) {
 			case ResultError::WRONG_VALUE: {
 				auto to_str = [] (const Output& val) -> std::string {
 					if constexpr (requires { val.to_string(); })
@@ -74,19 +66,21 @@ struct Failure {
 						return std::format ("{}", val);
 					else return "<unprintable>";
 				};
-				return std::format (
-					"Test case '{}' failed: expected '{}', got '{}'",
-					testName,
-					to_str (result.failed->expected),
-					to_str (result.failed->got)
-				);
+				return std::format ("FAILED: expected '{}', got '{}'", to_str (failed->expected), to_str (failed->got));
 			}
-			case ResultError::NO_FN:
-				return std::format ("Function not specified for test case '{}'", testName);
-			case ResultError::NO_TESTCASE_IN_SUITE:
-				return std::format ("Test case '{}' not found in suite '{}'", testName, suiteName);
+			case ResultError::NO_FN: return "FAILED: function not specified";
 		}
 		return "OK";
+	}
+};
+
+template <OutputT Output>
+struct Failure {
+	Result <Output> result;
+	std::string_view testName;
+
+	std::string to_string() const {
+		return std::format ("Test case '{}': {}", testName, result.to_string());
 	}
 };
 
@@ -165,11 +159,11 @@ struct Suite {
 	constexpr std::size_t size() const noexcept { return tests.size(); }
 
 	[[nodiscard]]
-	ResultType run (std::string_view testName) const {
+	std::optional<ResultType> run (std::string_view testName) const {
 		for (const TestType& test : tests)
 			if (test.name == testName)
 				return test.run();
-		return ResultType::fail (ResultError::NO_TESTCASE_IN_SUITE);
+		return std::nullopt;
 	}
 
 	template <bool doPrints = false>
@@ -180,7 +174,7 @@ struct Suite {
 		for (const TestType& test : tests) {
 			ResultType result = test.run();
 			if (!result) fails.items.emplace_back (
-				Failure { .result = std::move (result), .testName = test.name, .suiteName = name }
+				Failure { .result = std::move (result), .testName = test.name }
 			);
 		}
 
