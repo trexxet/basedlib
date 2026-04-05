@@ -17,11 +17,13 @@ int f (const int& x) { return x ? x + 1 : 0; }
 int g (const int& x) { return x ? x - 1 : 0; }
 bool b (const int& x) { return x > 0; }
 
+/*
 Basedtest::Result<bool> tester (const Foo& d) {
 	if (!(d.x == -d.y))
 		return Basedtest::Result<bool>::fail ();
 	return Basedtest::Result<bool>::success();
 }
+*/
 
 int main () {
 	Basedtest::Suite successSuite1 ("SuccessSuite1", Basedtest::tests <int, Foo, bar> (

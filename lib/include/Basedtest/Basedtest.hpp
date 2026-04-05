@@ -22,33 +22,17 @@ using ValueTestFunction = Basedlib::FunctionRef <Output (const Input&)>;
 template <typename Fn, typename Input, typename Output>
 concept ValueTestFunctionT = std::convertible_to <Fn, ValueTestFunction <Input, Output>>;
 
-/// @brief Result stores the test result: pass flag and non-pass information
-/// (message, expected & actual result)
+/// @brief ValueFailure stores the expected and got value for failed test
 template <OutputT Output>
-struct Result {
-	bool ok;
+struct ValueFailure {
+	std::string_view testName;
+	Output expected, got;
 
-	struct Failed { Output expected, got; };
-	std::optional <Failed> failed;
+	ValueFailure () = delete;
+	ValueFailure (std::string_view testName, Output expected, Output got)
+		: testName (testName), expected (std::move (expected)), got (std::move (got)) { }
 
-	explicit operator bool () const noexcept { return ok; }
-	int rc () const noexcept { return static_cast <int> (!ok); }
-
-	[[nodiscard]]
-	static Result success () { return Result { .ok = true }; }
-	[[nodiscard]]
-	static Result fail () { return Result { .ok = false }; }
-	[[nodiscard]]
-	static Result fail (Output expected, Output got) {
-		return Result {
-			.ok = false,
-			.failed = Failed { std::move (expected), std::move (got) }
-		};
-	}
-
-	std::string to_string() const {
-		if (ok) return "OK";
-
+	std::string to_string () const {
 		auto to_str = [] (const Output& val) -> std::string {
 			if constexpr (requires { val.to_string(); })
 				return std::string (val.to_string());
@@ -56,24 +40,19 @@ struct Result {
 				return std::format ("{}", val);
 			else return "<unprintable>";
 		};
-		return std::format ("FAILED: expected '{}', got '{}'", to_str (failed->expected), to_str (failed->got));
+
+		return std::format ("Test case '{}' failed: expected '{}', got '{}'",
+			testName, to_str (expected), to_str (got));
 	}
 };
 
 template <OutputT Output>
-struct Failure {
-	Result <Output> result;
-	std::string_view testName;
-
-	std::string to_string() const {
-		return std::format ("Test case '{}': {}", testName, result.to_string());
-	}
-};
+using ValueTestResult = std::optional <ValueFailure <Output>>;
 
 /// @brief Fails is a vector of suite's failed tests. Empty if all suite's tests passed.
 template <OutputT Output>
 struct Fails {
-	std::vector <Failure <Output>> items;
+	std::vector <ValueFailure <Output>> items;
 
 	explicit operator bool () const noexcept { return !items.empty(); }
 	int rc () const noexcept { return static_cast <int> (!items.empty()); }
@@ -85,8 +64,8 @@ struct Fails {
 	auto end ()   const noexcept { return items.end(); }
 };
 
-/// @brief ValueTest is a test that can be used with or without the Suite.
-/// ValueTests runs fn(const input&) and compares it's result with expected.
+/// @brief ValueTest runs fn(const input&) and compares it's result with the expected one.
+/// ValueTests can be used with or without the Suite.
 template <typename Input, OutputT Output>
 struct ValueTest {
 	std::string_view name;
@@ -94,14 +73,13 @@ struct ValueTest {
 	Output expected;
 	ValueTestFunction <Input, Output> fn;
 
-	using ResultType = Result <Output>;
+	using Failure = ValueFailure <Output>;
 
 	[[nodiscard]]
-	ResultType run () const {
+	ValueTestResult <Output> run () const {
 		Output got = fn (input);
-		if (got == expected) [[likely]]
-			return ResultType::success();
-		return ResultType::fail (expected, std::move (got));
+		if (got == expected) [[likely]] return std::nullopt;
+		return Failure (name, expected, std::move (got));
 	}
 };
 
@@ -135,19 +113,16 @@ concept ValueCaseT = std::same_as <T, ValueCase<Input, Output>>;
 template <typename Input, OutputT Output, size_t N>
 struct Suite {
 	using TestType = ValueTest <Input, Output>;
-	using ResultType = TestType::ResultType;
-	using FailureType = Failure <Output>;
 
 	std::string_view name;
 	std::array <TestType, N> tests;
 	constexpr std::size_t size() const noexcept { return tests.size(); }
 
-	[[nodiscard]]
-	std::optional<ResultType> run (std::string_view testName) const {
+	const TestType* find (std::string_view testName) const {
 		for (const TestType& test : tests)
 			if (test.name == testName)
-				return test.run();
-		return std::nullopt;
+				return &test;
+		return nullptr;
 	}
 
 	template <bool doPrints = false>
@@ -156,16 +131,14 @@ struct Suite {
 		Fails<Output> fails;
 		fails.items.reserve (size());
 		for (const TestType& test : tests) {
-			ResultType result = test.run();
-			if (!result) fails.items.emplace_back (
-				Failure { .result = std::move (result), .testName = test.name }
-			);
+			ValueTestResult <Output> result = test.run();
+			if (result) fails.items.emplace_back (std::move (*result));
 		}
 
 		if constexpr (doPrints) {
 			if (fails) {
 				std::print ("Suite '{}': {} tests failed out of {}:\n", name, fails.size(), size());
-				for (const FailureType& fail : fails)
+				for (const typename TestType::Failure& fail : fails)
 					std::print (" - {}\n", fail.to_string());
 			} else {
 				std::print ("Suite '{}': all {} tests passed\n", name, size());
