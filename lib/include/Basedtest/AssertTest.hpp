@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "Basedlib/Function.hpp"
+#include "Basedlib/Specialization.hpp"
 
 namespace Basedtest {
 
@@ -17,6 +18,10 @@ struct AssertFailure {
 	AssertFailure () = delete;
 	AssertFailure (std::string_view testName, std::string_view where)
 		: testName (testName), where (where) { }
+
+	std::string to_string () const {
+		return "placeholder";
+	}
 };
 
 using AssertTestResult = std::expected <void, AssertFailure>;
@@ -33,7 +38,13 @@ struct AssertTest {
 	Input input;
 	AssertTestFunction <Input> fn;
 
-	AssertTestResult run () const { return fn (input); }
+	using Failure = AssertFailure;
+	using Result = AssertTestResult;
+
+	Result run () const { return fn (input); }
 };
+
+template <typename T>
+concept AssertTestT = Basedlib::specialization_of <T, AssertTest>;
 
 }

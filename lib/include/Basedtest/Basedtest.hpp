@@ -12,10 +12,14 @@
 
 namespace Basedtest {
 
+template <typename T>
+concept TestT = AssertTestT<T> || ValueTestT <T>;
+
 /// @brief Fails is a vector of suite's failed tests. Empty if all suite's tests passed.
-template <OutputT Output>
+template <TestT Test>
 struct Fails {
-	std::vector <ValueFailure <Output>> items;
+	using Failure = Test::Failure;
+	std::vector <Failure> items;
 
 	explicit operator bool () const noexcept { return !items.empty(); }
 	int rc () const noexcept { return static_cast <int> (!items.empty()); }
@@ -27,37 +31,39 @@ struct Fails {
 	auto end ()   const noexcept { return items.end(); }
 };
 
-/// @brief Suite is a suite of multiple Tests/Cases of same Input/Output type that
+/// @brief Suite is a suite of multiple Tests/Cases of same type that
 /// can be run all together or by name.
-template <typename Input, OutputT Output, size_t N>
+template <TestT Test, size_t N>
 struct Suite {
-	using TestType = ValueTest <Input, Output>;
-
 	std::string_view name;
-	std::array <TestType, N> tests;
+	std::array <Test, N> tests;
 	constexpr std::size_t size() const noexcept { return tests.size(); }
 
-	const TestType* find (std::string_view testName) const {
-		for (const TestType& test : tests)
+	const Test* find (std::string_view testName) const {
+		for (const Test& test : tests)
 			if (test.name == testName)
 				return &test;
 		return nullptr;
 	}
 
+	using Result = Test::Result;
+	using Failure = Test::Failure;
+
 	template <bool doPrints = false>
 	[[nodiscard]]
-	Fails<Output> run () const {
-		Fails<Output> fails;
+	Fails<Test> run () const {
+		Fails<Test> fails;
 		fails.items.reserve (size());
-		for (const TestType& test : tests) {
-			ValueTestResult <Output> result = test.run();
-			if (!result) fails.items.emplace_back (std::move(result).error());
+		for (const Test& test : tests) {
+			Result result = test.run();
+			if (!result)
+				fails.items.emplace_back (std::move(result).error());
 		}
 
 		if constexpr (doPrints) {
 			if (fails) {
 				std::print ("Suite '{}': {} tests failed out of {}:\n", name, fails.size(), size());
-				for (const typename TestType::Failure& fail : fails)
+				for (const Failure& fail : fails)
 					std::print (" - {}\n", fail.to_string());
 			} else {
 				std::print ("Suite '{}': all {} tests passed\n", name, size());
@@ -67,21 +73,21 @@ struct Suite {
 		return fails;
 	}
 
-	consteval Suite (std::string_view name, std::array<TestType, N> tests) : name (name), tests (std::move (tests)) { }
+	consteval Suite (std::string_view name, std::array<Test, N> tests) : name (name), tests (std::move (tests)) { }
 	Suite () = delete;
 };
 
-template <typename Input, OutputT Output, size_t N>
-Suite (std::string_view name, std::array<ValueTest <Input, Output>, N> tests) -> Suite <Input, Output, N>;
+template <TestT Test, size_t N>
+Suite (std::string_view name, std::array<Test, N> tests) -> Suite <Test, N>;
 
 /// @brief Fill suite with Tests
-template <typename Input, OutputT Output, ValueTestT <Input, Output>... Ts>
+template <typename Input, OutputT Output, ValueTestT... Ts>
 consteval auto tests (Ts&&... args) {
 	return std::array <ValueTest <Input, Output>, sizeof... (Ts)> { std::forward<Ts> (args)... };
 }
 
 /// @brief Fill suite with Cases running Fn
-template <typename Input, OutputT Output, auto Fn, ValueCaseT <Input, Output>... Ts>
+template <typename Input, OutputT Output, auto Fn, ValueCaseT... Ts>
 requires ValueTestFunctionT <decltype (Fn), Input, Output>
 consteval auto tests (Ts&&... args) {
 	return std::array <ValueTest <Input, Output>, sizeof... (Ts)> {

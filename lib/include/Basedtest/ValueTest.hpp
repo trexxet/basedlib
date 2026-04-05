@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "Basedlib/Function.hpp"
+#include "Basedlib/Specialization.hpp"
 
 namespace Basedtest {
 
@@ -56,9 +57,10 @@ struct ValueTest {
 	ValueTestFunction <Input, Output> fn;
 
 	using Failure = ValueFailure <Output>;
+	using Result = ValueTestResult <Output>;
 
 	[[nodiscard]]
-	ValueTestResult <Output> run () const {
+	Result run () const {
 		Output got = fn (input);
 		if (got != expected) [[unlikely]]
 			return std::unexpected (Failure (name, expected, std::move (got)));
@@ -69,8 +71,8 @@ struct ValueTest {
 template <typename Input, OutputT Output, ValueTestFunctionT <Input, Output> Fn>
 ValueTest (std::string_view, Input, Output, Fn) -> ValueTest <Input, Output>;
 
-template <typename T, typename Input, typename Output>
-concept ValueTestT = std::same_as <T, ValueTest<Input, Output>>;
+template <typename T>
+concept ValueTestT = Basedlib::specialization_of <T, ValueTest>;
 
 /// @brief ValueCase is a special case of ValueTest. It can be used only within Suite, so
 /// multiple Cases share the same test function.
@@ -88,7 +90,7 @@ struct ValueCase {
 template <typename Input, OutputT Output>
 ValueCase (std::string_view, Input, Output) -> ValueCase <Input, Output>;
 
-template <typename T, typename Input, typename Output>
-concept ValueCaseT = std::same_as <T, ValueCase<Input, Output>>;
+template <typename T>
+concept ValueCaseT = Basedlib::specialization_of <T, ValueCase>;
 
 }
