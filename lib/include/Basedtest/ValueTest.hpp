@@ -6,6 +6,8 @@
 #include <string>
 #include <string_view>
 
+#include "Basedlib/Function.hpp"
+
 namespace Basedtest {
 
 template <typename T>
@@ -15,7 +17,7 @@ template <typename Input, OutputT Output>
 using ValueTestFunction = Basedlib::FunctionRef <Output (const Input&)>;
 
 template <typename Fn, typename Input, typename Output>
-concept ValueTestFunctionT = std::convertible_to <Fn, ValueTestFunction <Input, Output>>;
+concept ValueTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, ValueTestFunction <Input, Output>>;
 
 /// @brief ValueFailure stores the expected and got value for failed test
 template <OutputT Output>
