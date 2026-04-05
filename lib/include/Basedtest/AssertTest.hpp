@@ -1,8 +1,8 @@
 #pragma once
 
 #include <concepts>
+#include <expected>
 #include <format>
-#include <optional>
 #include <string>
 #include <string_view>
 
@@ -10,24 +10,16 @@
 
 namespace Basedtest {
 
-class AssertTestResult {
-	AssertTestResult (std::string_view testName) : testName (testName) { }
-	AssertTestResult (std::string_view testName, std::string_view where)
-		: testName (testName), where (where) { }
-public:
+struct AssertFailure {
 	std::string_view testName;
-	std::optional <std::string> where;
+	std::string where;
 
-	explicit operator bool () const noexcept { return !where; }
-
-	AssertTestResult () = delete;
-	static AssertTestResult success (std::string_view testName) {
-		return AssertTestResult (testName);
-	}
-	static AssertTestResult fail (std::string_view testName, std::string_view where) {
-		return AssertTestResult (testName, where);
-	}
+	AssertFailure () = delete;
+	AssertFailure (std::string_view testName, std::string_view where)
+		: testName (testName), where (where) { }
 };
+
+using AssertTestResult = std::expected <void, AssertFailure>;
 
 template <typename Input>
 using AssertTestFunction = Basedlib::FunctionRef <AssertTestResult (const Input&)>;
@@ -41,9 +33,7 @@ struct AssertTest {
 	Input input;
 	AssertTestFunction <Input> fn;
 
-	AssertTestResult run () const {
-		return fn (input);
-	}
+	AssertTestResult run () const { return fn (input); }
 };
 
 }

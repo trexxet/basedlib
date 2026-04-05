@@ -1,8 +1,8 @@
 #pragma once
 
 #include <concepts>
+#include <expected>
 #include <format>
-#include <optional>
 #include <string>
 #include <string_view>
 
@@ -44,7 +44,7 @@ struct ValueFailure {
 };
 
 template <OutputT Output>
-using ValueTestResult = std::optional <ValueFailure <Output>>;
+using ValueTestResult = std::expected <void, ValueFailure <Output>>;
 
 /// @brief ValueTest runs fn(const input&) and compares it's result with the expected one.
 /// ValueTests can be used with or without the Suite.
@@ -60,8 +60,9 @@ struct ValueTest {
 	[[nodiscard]]
 	ValueTestResult <Output> run () const {
 		Output got = fn (input);
-		if (got == expected) [[likely]] return std::nullopt;
-		return Failure (name, expected, std::move (got));
+		if (got != expected) [[unlikely]]
+			return std::unexpected (Failure (name, expected, std::move (got)));
+		return {};
 	}
 };
 

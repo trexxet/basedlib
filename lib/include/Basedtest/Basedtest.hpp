@@ -51,7 +51,7 @@ struct Suite {
 		fails.items.reserve (size());
 		for (const TestType& test : tests) {
 			ValueTestResult <Output> result = test.run();
-			if (result) fails.items.emplace_back (std::move (*result));
+			if (!result) fails.items.emplace_back (std::move(result).error());
 		}
 
 		if constexpr (doPrints) {
