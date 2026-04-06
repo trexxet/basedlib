@@ -27,4 +27,15 @@ using variadic_t = std::tuple_element_t <N, std::tuple<Ts...>>;
 template <typename... Ts>
 using first_variadic_t = variadic_t <0, Ts...>;
 
+//// Check if all types in variadic pack are the same
+
+template <typename... Ts>
+concept all_same = (std::same_as <first_variadic_t<Ts...>, Ts> && ...);
+
+template <typename... Ts>
+concept all_same_remove_cvref = (std::same_as <
+	std::remove_cvref_t <first_variadic_t<Ts...>>,
+	std::remove_cvref_t <Ts>
+> && ...);
+
 }

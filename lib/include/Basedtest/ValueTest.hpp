@@ -98,6 +98,6 @@ concept ValueCaseFunctionT = (ValueCaseT<Ts> && ...) && ValueTestFunctionT <
 	decltype (Fn),
 	typename std::remove_cvref_t<Basedlib::first_variadic_t<Ts...>>::InputType,
 	typename std::remove_cvref_t<Basedlib::first_variadic_t<Ts...>>::OutputType
->;
+> && Basedlib::all_same_remove_cvref<Ts...>;
 
 }
