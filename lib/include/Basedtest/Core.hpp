@@ -16,9 +16,4 @@ struct Failure {
 	}
 };
 
-using Result = std::expected <void, Failure>;
-
-template <typename T>
-Result bake_result (T) = delete;
-
 }

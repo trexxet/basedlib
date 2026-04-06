@@ -46,12 +46,6 @@ struct ValueFailure : Failure {
 template <OutputT Output>
 using ValueTestResult = std::expected <void, ValueFailure <Output>>;
 
-template <OutputT Output>
-Result bake_result (ValueTestResult <Output> result) {
-	if (result) return {};
-	return std::unexpected (std::move(result).error().bake());
-}
-
 /// @brief ValueTest runs fn(const input&) and compares it's result with the expected one.
 /// ValueTests can be used with or without the Suite.
 template <typename Input, OutputT Output>
@@ -84,8 +78,12 @@ struct ValueCase {
 	Input input;
 	Output expected;
 
+	using InputType = Input;
+	using OutputType = Output;
+	using TestType = ValueTest <Input, Output>;
+
 	consteval auto make_test (ValueTestFunction <Input, Output> fn) const noexcept {
-		return ValueTest <Input, Output> {name, input, expected, fn};
+		return TestType {name, input, expected, fn};
 	}
 };
 
@@ -94,5 +92,12 @@ ValueCase (std::string_view, Input, Output) -> ValueCase <Input, Output>;
 
 template <typename T>
 concept ValueCaseT = Basedlib::specialization_of <T, ValueCase>;
+
+template <auto Fn, typename... Ts>
+concept ValueCaseFunctionT = (ValueCaseT<Ts> && ...) && ValueTestFunctionT <
+	decltype (Fn),
+	typename std::remove_cvref_t<Basedlib::first_variadic_t<Ts...>>::InputType,
+	typename std::remove_cvref_t<Basedlib::first_variadic_t<Ts...>>::OutputType
+>;
 
 }

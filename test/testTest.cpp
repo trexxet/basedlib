@@ -26,7 +26,7 @@ Basedtest::Result<bool> tester (const Foo& d) {
 */
 
 int main () {
-	Basedtest::Suite successSuite1 ("SuccessSuite1", Basedtest::tests <int, Foo, bar> (
+	Basedtest::Suite successSuite1 ("SuccessSuite1", Basedtest::cases <bar> (
 		Basedtest::ValueCase {"1", 1, Foo {1, -1}},
 		Basedtest::ValueCase {"2", 2, Foo {2, -2}},
 		Basedtest::ValueCase {"1337", 1337, Foo {1337, -1337}}
@@ -34,7 +34,7 @@ int main () {
 	Basedtest::Fails successSuiteFails1 = successSuite1.run <true> ();
 	if (successSuiteFails1) return successSuiteFails1.rc();
 
-	Basedtest::Suite failSuite1 ("FailSuite1", Basedtest::tests <int, bool, b> (
+	Basedtest::Suite failSuite1 ("FailSuite1", Basedtest::cases <b> (
 		Basedtest::ValueCase {"1", 1, true},
 		Basedtest::ValueCase {"-1", -1, true},
 		Basedtest::ValueCase {"0", 0, false}
@@ -42,7 +42,7 @@ int main () {
 	Basedtest::Fails failSuiteFails1 = failSuite1.run <true> ();
 	assert (failSuiteFails1);
 
-	Basedtest::Suite successSuite2 ("SuccessSuite2", Basedtest::tests <int, bool> (
+	Basedtest::Suite successSuite2 ("SuccessSuite2", Basedtest::tests (
 		Basedtest::ValueTest {"1", 1, true, b},
 		Basedtest::ValueTest {"2", 2, true, b},
 		Basedtest::ValueTest {"-1337", -1337, false, b}
@@ -50,7 +50,7 @@ int main () {
 	Basedtest::Fails successSuiteFails2 = successSuite2.run <true> ();
 	if (successSuiteFails2) return successSuiteFails2.rc();
 
-	Basedtest::Suite failSuite2 ("FailSuite2", Basedtest::tests <int, int> (
+	Basedtest::Suite failSuite2 ("FailSuite2", Basedtest::tests (
 		Basedtest::ValueTest {"1", 1, 2, f},
 		Basedtest::ValueTest {"-1", -1, 0, f},
 		Basedtest::ValueTest {"0", 0, -1, g}

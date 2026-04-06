@@ -1,11 +1,13 @@
 #pragma once
 
-#include <array>
 #include <concepts>
 #include <format>
 #include <print>
 #include <string_view>
+#include <tuple>
 #include <vector>
+
+#include "Basedlib/Traits.hpp"
 
 #include "Core.hpp"
 #include "AssertTest.hpp"
@@ -30,31 +32,25 @@ struct Fails {
 	auto end ()   const noexcept { return items.end(); }
 };
 
-/// @brief Suite is a suite of multiple Tests/Cases of same type that
-/// can be run all together or by name.
-template <TestT Test, size_t N>
+/// @brief Suite is a suite of multiple Tests/Cases that can be run all together or by name.
+template <TestT... Tests>
 struct Suite {
 	std::string_view name;
-	std::array <Test, N> tests;
-	constexpr std::size_t size() const noexcept { return tests.size(); }
-
-	const Test* find (std::string_view testName) const {
-		for (const Test& test : tests)
-			if (test.name == testName)
-				return &test;
-		return nullptr;
-	}
+	std::tuple <Tests...> tests;
+	constexpr std::size_t size() const noexcept { return std::tuple_size_v <decltype (tests)>; }
 
 	template <bool doPrints = false>
 	[[nodiscard]]
 	Fails run () const {
 		Fails fails;
 		fails.items.reserve (size());
-		for (const Test& test : tests) {
-			Result result = bake_result (test.run());
-			if (!result)
-				fails.items.emplace_back (std::move(result).error());
-		}
+		std::apply ([&] (const auto&... test) {
+			([&] {
+				auto result = test.run();
+				if (!result)
+					fails.items.emplace_back (std::move(result).error().bake());
+			} (), ...);
+		}, tests);
 
 		if constexpr (doPrints) {
 			if (fails) {
@@ -69,26 +65,24 @@ struct Suite {
 		return fails;
 	}
 
-	consteval Suite (std::string_view name, std::array<Test, N> tests) : name (name), tests (std::move (tests)) { }
+	consteval Suite (std::string_view name, std::tuple<Tests...> tests)
+		: name (name), tests (std::move (tests)) { }
 	Suite () = delete;
 };
 
-template <TestT Test, size_t N>
-Suite (std::string_view name, std::array<Test, N> tests) -> Suite <Test, N>;
+template <TestT... Tests>
+Suite (std::string_view name, std::tuple<Tests...> tests) -> Suite <Tests...>;
 
 /// @brief Fill suite with Tests
-template <typename Input, OutputT Output, ValueTestT... Ts>
+template <ValueTestT... Ts> requires (sizeof...(Ts) > 0)
 consteval auto tests (Ts&&... args) {
-	return std::array <ValueTest <Input, Output>, sizeof... (Ts)> { std::forward<Ts> (args)... };
+	return std::tuple <Ts...> { std::forward<Ts> (args)... };
 }
 
 /// @brief Fill suite with Cases running Fn
-template <typename Input, OutputT Output, auto Fn, ValueCaseT... Ts>
-requires ValueTestFunctionT <decltype (Fn), Input, Output>
-consteval auto tests (Ts&&... args) {
-	return std::array <ValueTest <Input, Output>, sizeof... (Ts)> {
-		std::forward<Ts> (args).make_test (Fn)...
-	};
+template <auto Fn, ValueCaseT... Ts> requires ValueCaseFunctionT <Fn, Ts...>
+consteval auto cases (Ts&&... args) {
+	return std::tuple <typename Ts::TestType...> { std::forward<Ts> (args).make_test (Fn)... };
 }
 
 }
