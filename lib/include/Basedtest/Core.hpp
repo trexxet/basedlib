@@ -1,5 +1,6 @@
 #pragma once
 
+#include <expected>
 #include <format>
 #include <string>
 #include <string_view>
@@ -14,5 +15,10 @@ struct Failure {
 		return std::format ("Test case '{}' failed: {}", testName, msg);
 	}
 };
+
+using Result = std::expected <void, Failure>;
+
+template <typename T>
+Result bake_result (T) = delete;
 
 }

@@ -46,6 +46,12 @@ struct ValueFailure : Failure {
 template <OutputT Output>
 using ValueTestResult = std::expected <void, ValueFailure <Output>>;
 
+template <OutputT Output>
+Result bake_result (ValueTestResult <Output> result) {
+	if (result) return {};
+	return std::unexpected (std::move(result).error().bake());
+}
+
 /// @brief ValueTest runs fn(const input&) and compares it's result with the expected one.
 /// ValueTests can be used with or without the Suite.
 template <typename Input, OutputT Output>
@@ -55,10 +61,8 @@ struct ValueTest {
 	Output expected;
 	ValueTestFunction <Input, Output> fn;
 
-	using Result = ValueTestResult <Output>;
-
 	[[nodiscard]]
-	Result run () const {
+	ValueTestResult <Output> run () const {
 		Output got = fn (input);
 		if (got != expected) [[unlikely]]
 			return std::unexpected (ValueFailure <Output> (name, expected, std::move (got)));

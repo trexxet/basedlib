@@ -45,17 +45,15 @@ struct Suite {
 		return nullptr;
 	}
 
-	using Result = Test::Result;
-
 	template <bool doPrints = false>
 	[[nodiscard]]
 	Fails run () const {
 		Fails fails;
 		fails.items.reserve (size());
 		for (const Test& test : tests) {
-			Result result = test.run();
+			Result result = bake_result (test.run());
 			if (!result)
-				fails.items.emplace_back (std::move (result.error().bake()));
+				fails.items.emplace_back (std::move(result).error());
 		}
 
 		if constexpr (doPrints) {

@@ -18,6 +18,11 @@ struct AssertFailure : Failure {
 
 using AssertTestResult = std::expected <void, AssertFailure>;
 
+Result bake_result (AssertTestResult result) {
+	if (result) return {};
+	return std::unexpected (std::move(result).error().bake());
+}
+
 template <typename Input>
 using AssertTestFunction = Basedlib::FunctionRef <AssertTestResult (const Input&)>;
 
@@ -30,9 +35,7 @@ struct AssertTest {
 	Input input;
 	AssertTestFunction <Input> fn;
 
-	using Result = AssertTestResult;
-
-	Result run () const { return fn (input); }
+	AssertTestResult run () const { return fn (input); }
 };
 
 template <typename T>
