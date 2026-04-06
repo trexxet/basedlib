@@ -1,0 +1,18 @@
+#pragma once
+
+#include <format>
+#include <string>
+#include <string_view>
+
+namespace Basedtest {
+
+struct Failure {
+	std::string_view testName;
+	std::string msg;
+
+	std::string to_string () const {
+		return std::format ("Test case '{}' failed: {}", testName, msg);
+	}
+};
+
+}

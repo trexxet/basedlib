@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 
+#include "Core.hpp"
 #include "AssertTest.hpp"
 #include "ValueTest.hpp"
 
@@ -16,9 +17,7 @@ template <typename T>
 concept TestT = AssertTestT<T> || ValueTestT <T>;
 
 /// @brief Fails is a vector of suite's failed tests. Empty if all suite's tests passed.
-template <TestT Test>
 struct Fails {
-	using Failure = Test::Failure;
 	std::vector <Failure> items;
 
 	explicit operator bool () const noexcept { return !items.empty(); }
@@ -47,17 +46,16 @@ struct Suite {
 	}
 
 	using Result = Test::Result;
-	using Failure = Test::Failure;
 
 	template <bool doPrints = false>
 	[[nodiscard]]
-	Fails<Test> run () const {
-		Fails<Test> fails;
+	Fails run () const {
+		Fails fails;
 		fails.items.reserve (size());
 		for (const Test& test : tests) {
 			Result result = test.run();
 			if (!result)
-				fails.items.emplace_back (std::move(result).error());
+				fails.items.emplace_back (std::move (result.error().bake()));
 		}
 
 		if constexpr (doPrints) {

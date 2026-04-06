@@ -9,6 +9,8 @@
 #include "Basedlib/Function.hpp"
 #include "Basedlib/Specialization.hpp"
 
+#include "Core.hpp"
+
 namespace Basedtest {
 
 template <typename T>
@@ -22,15 +24,13 @@ concept ValueTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, Valu
 
 /// @brief ValueFailure stores the expected and got value for failed test
 template <OutputT Output>
-struct ValueFailure {
-	std::string_view testName;
+struct ValueFailure : Failure {
 	Output expected, got;
 
-	ValueFailure () = delete;
 	ValueFailure (std::string_view testName, Output expected, Output got)
-		: testName (testName), expected (std::move (expected)), got (std::move (got)) { }
+		: Failure {.testName = testName}, expected (std::move (expected)), got (std::move (got)) { }
 
-	std::string to_string () const {
+	Failure bake () {
 		auto to_str = [] (const Output& val) -> std::string {
 			if constexpr (requires { val.to_string(); })
 				return std::string (val.to_string());
@@ -38,9 +38,8 @@ struct ValueFailure {
 				return std::format ("{}", val);
 			else return "<unprintable>";
 		};
-
-		return std::format ("Test case '{}' failed: expected '{}', got '{}'",
-			testName, to_str (expected), to_str (got));
+		msg = std::format ("expected '{}', got '{}'", to_str (expected), to_str (got));
+		return *this;
 	}
 };
 
@@ -56,14 +55,13 @@ struct ValueTest {
 	Output expected;
 	ValueTestFunction <Input, Output> fn;
 
-	using Failure = ValueFailure <Output>;
 	using Result = ValueTestResult <Output>;
 
 	[[nodiscard]]
 	Result run () const {
 		Output got = fn (input);
 		if (got != expected) [[unlikely]]
-			return std::unexpected (Failure (name, expected, std::move (got)));
+			return std::unexpected (ValueFailure <Output> (name, expected, std::move (got)));
 		return {};
 	}
 };
