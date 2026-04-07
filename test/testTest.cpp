@@ -47,7 +47,15 @@ int main () {
 	Basedtest::Fails successSuiteFails2 = successSuite2.run <true> ();
 	if (successSuiteFails2) return successSuiteFails2.rc();
 
+	Basedtest::Suite successSuite3 ("SuccessSuite3", Basedtest::cases <tester> (
+		Basedtest::AssertCase {"1", Foo {1, -1}},
+		Basedtest::AssertCase {"2", Foo {2, -2}}
+	));
+	Basedtest::Fails successSuiteFails3 = successSuite3.run <true> ();
+	if (successSuiteFails3) return successSuiteFails3.rc();
+
 	Basedtest::Suite failSuite2 ("FailSuite2", Basedtest::tests (
+		Basedtest::AssertTest {"a", Foo {1, 1}, tester},
 		Basedtest::ValueTest {"1", 1, 2, f},
 		Basedtest::ValueTest {"-1", -1, 0, f},
 		Basedtest::ValueTest {"0", 0, -1, g}

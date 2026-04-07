@@ -16,7 +16,11 @@
 namespace Basedtest {
 
 template <typename T>
-concept TestT = AssertTestT<T> || ValueTestT <T>;
+concept TestT = AssertTestT<T> || ValueTestT<T>;
+template <typename T>
+concept CaseT = AssertCaseT<T> || ValueCaseT<T>;
+template <auto Fn, typename... Ts>
+concept CaseFunctionT = AssertCaseFunctionT<Fn, Ts...> || ValueCaseFunctionT<Fn, Ts...>;
 
 /// @brief Fails is a vector of suite's failed tests. Empty if all suite's tests passed.
 struct Fails {
@@ -32,7 +36,7 @@ struct Fails {
 	auto end ()   const noexcept { return items.end(); }
 };
 
-/// @brief Suite is a suite of multiple Tests/Cases that can be run all together or by name.
+/// @brief Suite is a suite of multiple Tests/Cases that can be run all together.
 template <TestT... Tests>
 struct Suite {
 	std::string_view name;
@@ -74,13 +78,13 @@ template <TestT... Tests>
 Suite (std::string_view name, std::tuple<Tests...> tests) -> Suite <Tests...>;
 
 /// @brief Fill suite with Tests
-template <ValueTestT... Ts> requires (sizeof...(Ts) > 0)
+template <TestT... Ts> requires (sizeof...(Ts) > 0)
 consteval auto tests (Ts&&... args) {
 	return std::tuple <Ts...> { std::forward<Ts> (args)... };
 }
 
 /// @brief Fill suite with Cases running Fn
-template <auto Fn, ValueCaseT... Ts> requires ValueCaseFunctionT <Fn, Ts...>
+template <auto Fn, CaseT... Ts> requires CaseFunctionT <Fn, Ts...>
 consteval auto cases (Ts&&... args) {
 	return std::tuple <typename Ts::TestType...> { std::forward<Ts> (args).make_test (Fn)... };
 }

@@ -87,9 +87,6 @@ struct ValueCase {
 	}
 };
 
-template <typename Input, OutputT Output>
-ValueCase (std::string_view, Input, Output) -> ValueCase <Input, Output>;
-
 template <typename T>
 concept ValueCaseT = Basedlib::specialization_of <T, ValueCase>;
 
