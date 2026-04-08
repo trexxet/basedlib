@@ -12,8 +12,9 @@
 #define BT_ASSERT_TEST(fn_name, InputType, inputName) \
 Basedtest::AssertTestResult fn_name (const InputType& inputName)
 
-#define BT_SCENARIO_TEST(fn_name) \
-Basedtest::AssertTestResult fn_name ()
+#define BT_SCENARIO_TEST(fn_name) Basedtest::AssertTestResult fn_name ()
+
+#define BT_SUITE_SCENARIO(fn) Basedtest::ScenarioTest {#fn, fn}
 
 #define BT_SUCCESS do { return {}; } while (0)
 

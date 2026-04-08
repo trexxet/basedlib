@@ -64,7 +64,7 @@ struct Suite {
 	std::tuple <Tests...> tests;
 	constexpr std::size_t size() const noexcept { return std::tuple_size_v <decltype (tests)>; }
 
-	template <bool doPrints = false>
+	template <bool doPrints = true>
 	[[nodiscard]]
 	SuiteFails run () const {
 		SuiteFails fails;

@@ -30,8 +30,8 @@ int test_mirror () {
 		Basedtest::ValueCase {"{2, -3}", Point {2, -3}, Point {-2, 3}},
 		Basedtest::ValueCase {"{-1337, -1337}", pointA, mirror_pointA}
 	));
-	// run<true> means that the suite will print the result to the stdout
-	Basedtest::SuiteFails testMirrorFails = testMirror.run<true>();
+	// run<true> (default) means that the suite will print the result to the stdout
+	Basedtest::SuiteFails testMirrorFails = testMirror.run();
 	// rc() returns 0 if SuiteFails is empty
 	return testMirrorFails.rc();
 }
@@ -46,8 +46,8 @@ Basedtest::SuiteFails test_point_coord_sign () {
 		Basedtest::AssertCase {.name = "{-1, 1}", .input = Point {-1, 1}},
 		Basedtest::AssertCase {"{2, 3}", Point {2, 3}} // this one would fail!
 	));
-	// run<false> (default) is a silent run
-	Basedtest::SuiteFails fails = testPointCoordSign.run();
+	// run<false> is a silent run
+	Basedtest::SuiteFails fails = testPointCoordSign.run<false>();
 	assert (fails); // SuiteFails is true when not empty
 	return fails;
 }
@@ -67,8 +67,9 @@ int test_mixed () {
 		ValueTest {"inc1", 1, 2, inc}, // ValueTests and AssertTests can't be constructed with designated initializers as they rely on CTAD
 		ValueTest {"dec2", 2, 1, [] (const int& x) { return x - 1; } }, // Lambdas can be used
 		AssertTest {"point1", Point {1, -1}, tester_point_coord_sign},
-		ScenarioTest {"point2", tester_point_coord_compare}
-	)).run<true>().rc();
+		ScenarioTest {"point2", tester_point_coord_compare},
+		BT_SUITE_SCENARIO (tester_point_coord_compare) // Sugar macro to make a scenario with name equal to function name
+	)).run().rc();
 }
 
 // 4) Tests can be run without suite. In that case ValueTest can return mismatched values.
