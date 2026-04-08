@@ -9,8 +9,6 @@
 #include "Basedlib/Function.hpp"
 #include "Basedlib/Traits.hpp"
 
-#include "Failure.hpp"
-
 namespace Basedtest {
 
 template <typename T>
@@ -22,28 +20,19 @@ using ValueTestFunction = Basedlib::FunctionRef <Output (const Input&)>;
 template <typename Fn, typename Input, typename Output>
 concept ValueTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, ValueTestFunction <Input, Output>>;
 
+template <OutputT Output>
+std::string format_value_output (const Output& val) noexcept {
+	if constexpr (std::formattable <Output, char>)
+		return std::format ("{}", val);
+	else if constexpr (requires { val.to_string(); })
+		return std::string (val.to_string());
+	else return "<unprintable>";
+}
+
 /// @brief ValueFailure stores the expected and got value for failed test
 template <OutputT Output>
 struct ValueFailure {
 	Output expected, got;
-
-	ValueFailure () = delete;
-	ValueFailure (Output expected, Output got)
-		: expected (std::move (expected)), got (std::move (got)) { }
-
-	Failure bake (std::string_view testName) {
-		auto to_str = [] (const Output& val) -> std::string {
-			if constexpr (requires { val.to_string(); })
-				return std::string (val.to_string());
-			else if constexpr (std::is_arithmetic_v <Output>)
-				return std::format ("{}", val);
-			else return "<unprintable>";
-		};
-		return {
-			.testName = testName,
-			.msg = std::format ("expected '{}', got '{}'", to_str (expected), to_str (got))
-		};
-	}
 };
 
 template <OutputT Output>
@@ -62,7 +51,7 @@ struct ValueTest {
 	ValueTestResult <Output> run () const {
 		Output got = fn (input);
 		if (got != expected) [[unlikely]]
-			return std::unexpected (ValueFailure <Output> (expected, std::move (got)));
+			return std::unexpected (ValueFailure <Output> { expected, std::move (got) });
 		return {};
 	}
 };

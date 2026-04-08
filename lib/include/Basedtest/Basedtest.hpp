@@ -9,7 +9,6 @@
 
 #include "Basedlib/Traits.hpp"
 
-#include "Failure.hpp"
 #include "AssertTest.hpp"
 #include "ValueTest.hpp"
 
@@ -22,9 +21,26 @@ concept CaseT = AssertCaseT<T> || ValueCaseT<T>;
 template <auto Fn, typename... Ts>
 concept CaseFunctionT = AssertCaseFunctionT<Fn, Ts...> || ValueCaseFunctionT<Fn, Ts...>;
 
-/// @brief Fails is a vector of suite's failed tests. Empty if all suite's tests passed.
-struct Fails {
-	std::vector <Failure> items;
+struct SuiteFail {
+	std::string_view testName;
+	std::string msg;
+
+	static SuiteFail make (const AssertFailure& f, std::string_view testName) noexcept {
+		return { .testName = testName, .msg = f.msg };
+	}
+
+	template <Basedlib::specialization_of<ValueFailure> VF>
+	static SuiteFail make (const VF& f, std::string_view testName) noexcept {
+		return {
+			.testName = testName,
+			.msg = std::format ("expected '{}', got '{}'", format_value_output (f.expected), format_value_output (f.got))
+		};
+	}
+};
+
+/// @brief SuiteFails is a vector of suite's failed tests. Empty if all suite's tests passed.
+struct SuiteFails {
+	std::vector <SuiteFail> items;
 
 	explicit operator bool () const noexcept { return !items.empty(); }
 	int rc () const noexcept { return static_cast <int> (!items.empty()); }
@@ -45,21 +61,22 @@ struct Suite {
 
 	template <bool doPrints = false>
 	[[nodiscard]]
-	Fails run () const {
-		Fails fails;
+	SuiteFails run () const {
+		SuiteFails fails;
 		fails.items.reserve (size());
+		// TODO: use template for when available
 		std::apply ([&] (const auto&... test) {
 			([&] {
 				auto result = test.run();
 				if (!result)
-					fails.items.emplace_back (std::move(result).error().bake(test.name));
+					fails.items.emplace_back (SuiteFail::make (std::move(result).error(), test.name));
 			} (), ...);
 		}, tests);
 
 		if constexpr (doPrints) {
 			if (fails) {
 				std::print ("Suite '{}': {} tests failed out of {}:\n", name, fails.size(), size());
-				for (const Failure& fail : fails)
+				for (const SuiteFail& fail : fails)
 					std::print (" - {}\n", fail);
 			} else {
 				std::print ("Suite '{}': all {} tests passed\n", name, size());
@@ -90,3 +107,11 @@ consteval auto cases (Ts&&... args) {
 }
 
 }
+
+template<>
+struct std::formatter <Basedtest::SuiteFail> {
+	constexpr auto parse (std::format_parse_context& ctx) const noexcept { return ctx.begin(); }
+	auto format (const Basedtest::SuiteFail& f, std::format_context& ctx) const noexcept {
+		return std::format_to (ctx.out(), "Test case '{}' failed: {}", f.testName, f.msg);
+	}
+};

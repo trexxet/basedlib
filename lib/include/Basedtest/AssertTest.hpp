@@ -9,15 +9,13 @@
 #include "Basedlib/Function.hpp"
 #include "Basedlib/Traits.hpp"
 
-#include "Failure.hpp"
-
 #define BT_ASSERT_TEST(fn_name, InputType, inputName) \
 Basedtest::AssertTestResult fn_name (const InputType& inputName)
 
 #define BT_SUCCESS do { return {}; } while (0)
 
 #define BT_FAIL(msg) do { \
-	return std::unexpected (Basedtest::AssertFailure (msg)); \
+	return std::unexpected (Basedtest::AssertFailure { msg }); \
 } while (0)
 
 #define BT_ASSERT(expr) do { \
@@ -28,9 +26,6 @@ namespace Basedtest {
 
 struct AssertFailure {
 	std::string msg;
-	Failure bake (std::string_view testName) const noexcept {
-		return { .testName = testName, .msg = msg };
-	}
 };
 
 using AssertTestResult = std::expected <void, AssertFailure>;
@@ -47,6 +42,7 @@ struct AssertTest {
 	Input input;
 	AssertTestFunction <Input> fn;
 
+	[[nodiscard]]
 	AssertTestResult run () const { return fn (input); }
 };
 
