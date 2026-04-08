@@ -53,13 +53,21 @@ Basedtest::SuiteFails test_point_coord_sign () {
 }
 
 // 3) Mixed test suite for different functions and even test types
+BT_SCENARIO_TEST (tester_point_coord_compare) {
+	Point p {-1, 2};
+	// Assert/Scenario test fail can be triggered manually
+	if (p.y < p.x) BT_FAIL ("Wrong coordinates in p!");
+	BT_ASSERT (p.x != p.y);
+	BT_SUCCESS;
+}
 int inc (const int& x) { return x + 1; }
 int test_mixed () {
 	using namespace Basedtest;
 	return Suite ("testMixed", tests (
-		ValueTest {"inc1", 1, 2, inc}, // Tests can't be constructed with designated initializers as they rely on CTAD
+		ValueTest {"inc1", 1, 2, inc}, // ValueTests and AssertTests can't be constructed with designated initializers as they rely on CTAD
 		ValueTest {"dec2", 2, 1, [] (const int& x) { return x - 1; } }, // Lambdas can be used
-		AssertTest {"point", Point {1, -1}, tester_point_coord_sign}
+		AssertTest {"point1", Point {1, -1}, tester_point_coord_sign},
+		ScenarioTest {"point2", tester_point_coord_compare}
 	)).run<true>().rc();
 }
 

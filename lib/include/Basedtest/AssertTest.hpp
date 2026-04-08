@@ -12,6 +12,9 @@
 #define BT_ASSERT_TEST(fn_name, InputType, inputName) \
 Basedtest::AssertTestResult fn_name (const InputType& inputName)
 
+#define BT_SCENARIO_TEST(fn_name) \
+Basedtest::AssertTestResult fn_name ()
+
 #define BT_SUCCESS do { return {}; } while (0)
 
 #define BT_FAIL(msg) do { \
@@ -36,6 +39,8 @@ using AssertTestFunction = Basedlib::FunctionRef <AssertTestResult (const Input&
 template <typename Fn, typename Input>
 concept AssertTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, AssertTestFunction <Input>>;
 
+/// @brief AssertTest runs fn(const input&) until BT_SUCCESS or failed BT_ASSERT.
+/// AssertTests can be used with or without the Suite.
 template <typename Input>
 struct AssertTest {
 	std::string_view name;
@@ -51,6 +56,24 @@ AssertTest (std::string_view, Input, Fn) -> AssertTest <Input>;
 
 template <typename T>
 concept AssertTestT = Basedlib::specialization_of <T, AssertTest>;
+
+using ScenarioTestFunction = Basedlib::FunctionRef <AssertTestResult()>;
+
+template <typename Fn>
+concept ScenarioTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, ScenarioTestFunction>;
+
+/// @brief ScenarioTest is similar to AssertTest, but runs fn() without input.
+/// ScenarioTests can be used with or without the Suite.
+struct ScenarioTest {
+	std::string_view name;
+	ScenarioTestFunction fn;
+
+	[[nodiscard]]
+	AssertTestResult run () const { return fn(); }
+};
+
+template <typename T>
+concept ScenarioTestT = std::same_as <std::remove_cvref_t<T>, ScenarioTest>;
 
 /// @brief AssertCase is a special case of AssertTest. It can be used only within Suite, so
 /// multiple Cases share the same test function.

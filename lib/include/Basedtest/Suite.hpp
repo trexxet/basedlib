@@ -20,7 +20,7 @@
 namespace Basedtest {
 
 template <typename T>
-concept TestT = AssertTestT<T> || ValueTestT<T>;
+concept TestT = AssertTestT<T> || ScenarioTestT<T> || ValueTestT<T>;
 template <typename T>
 concept CaseT = AssertCaseT<T> || ValueCaseT<T>;
 template <auto Fn, typename... Ts>
