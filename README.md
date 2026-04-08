@@ -6,14 +6,21 @@ Some stuff designed to be used with [Based Engine](https://gitlab.com/trexxet/ba
 * Event-driven FSM without jump tables
 * Simple static reflection for type names & values (using `__PRETTY_FUNCTION__`)
 * Enum static reflection for getting field name (simplier alternative to magic_enum)
+* Helper traits & concepts (`specialization_of`, `variadic_t`, `all_same` etc.)
 * Debug logger with file output
 * Thread-safe FIFO queue
 * Append-only ring buffer
 * Debounce timer
 * Overloaded pattern
-* Function pointer wrapper for functoins & non-capturing lambdas
+* Function pointer wrappers for functoins & non-capturing lambdas
 * Cross-platform multibyte string <-> wide string converters
 * Macros for non-retarded move/copy constructor/assignment declaration
 
 ### Feature goals
 * Autocompletion Trie (implemented in BE, will move here later)
+
+# basedtest
+
+Lightweight & fast test framework for value and assertion tests.
+
+See the [test demo](test/testTest.cpp) for features & usage.
