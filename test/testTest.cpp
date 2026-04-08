@@ -1,67 +1,98 @@
 #include "Basedtest/Suite.hpp"
 
 #include <cassert>
+#include <expected>
 #include <format>
 #include <string>
 
-struct Foo {
+struct Point {
 	int x, y;
-	bool operator== (const Foo&) const = default;
+
+	// To be used in value tests as output, the type must satisfy std::equality_comparable
+	bool operator== (const Point&) const = default;
+
+	// To be printable in a suite run, the type must satisfy std::formattable
+	// or have std::string to_string() method
 	std::string to_string() const {
 		return std::format ("{{x = {}, y = {}}}", x, y);
 	}
 };
 
-Foo bar (const int& a) { return { a, -a }; }
-int f (const int& x) { return x ? x + 1 : 0; }
-int g (const int& x) { return x ? x - 1 : 0; }
-bool b (const int& x) { return x > 0; }
+// 1) Multiple value test cases for the same function
+Point mirror (const Point& a) { return { -a.x, -a.y }; }
+int test_mirror () {
+	// Note that suite initialization is consteval
+	constexpr Point pointA {-1337, -1337};
+	constexpr Point mirror_pointA {1337, 1337};
+	Basedtest::Suite testMirror ("testMirror", Basedtest::cases <mirror> (
+		// Cases can be constructed with designated initializers
+		Basedtest::ValueCase {.name = "{1, 1}", .input = Point {1, 1}, .expected = Point {-1, -1}},
+		Basedtest::ValueCase {"{2, -3}", Point {2, -3}, Point {-2, 3}},
+		Basedtest::ValueCase {"{-1337, -1337}", pointA, mirror_pointA}
+	));
+	// run<true> means that the suite will print the result to the stdout
+	Basedtest::SuiteFails testMirrorFails = testMirror.run<true>();
+	// rc() returns 0 if SuiteFails is empty
+	return testMirrorFails.rc();
+}
 
-BT_ASSERT_TEST (tester, Foo, d) {
+// 2) Multiple assertion test cases for the same BT_ASSERT_TEST function
+BT_ASSERT_TEST (tester_point_coord_sign, Point, d) {
 	BT_ASSERT (d.x == -d.y);
 	BT_SUCCESS;
 }
+Basedtest::SuiteFails test_point_coord_sign () {
+	Basedtest::Suite testPointCoordSign ("testPointCoordSign", Basedtest::cases <tester_point_coord_sign> (
+		Basedtest::AssertCase {.name = "{-1, 1}", .input = Point {-1, 1}},
+		Basedtest::AssertCase {"{2, 3}", Point {2, 3}} // this one would fail!
+	));
+	// run<false> (default) is a silent run
+	Basedtest::SuiteFails fails = testPointCoordSign.run();
+	assert (fails); // SuiteFails is true when not empty
+	return fails;
+}
+
+// 3) Mixed test suite for different functions and even test types
+int inc (const int& x) { return x + 1; }
+int test_mixed () {
+	using namespace Basedtest;
+	return Suite ("testMixed", tests (
+		ValueTest {"inc1", 1, 2, inc}, // Tests can't be constructed with designated initializers as they rely on CTAD
+		ValueTest {"dec2", 2, 1, [] (const int& x) { return x - 1; } }, // Lambdas can be used
+		AssertTest {"point", Point {1, -1}, tester_point_coord_sign}
+	)).run<true>().rc();
+}
+
+// 4) Tests can be run without suite. In that case ValueTest can return mismatched values.
+int test_single () {
+	using namespace Basedtest;
+	const std::string name ("testSinglePoint");
+	ValueTest test {
+		name, Point {1, 2}, Point {21, 1},
+		[] (const Point& p) { return Point {p.y, p.x}; } // would fail
+	};
+	ValueTestResult result = test.run();
+	if (!result)
+		std::print (
+			"{} failed on purpose: expected '{}', got '{}'\n",
+			name, result.error().expected.to_string(), result.error().got.to_string()
+		);
+	return 0;
+}
 
 int main () {
-	Basedtest::Suite successSuite1 ("SuccessSuite1", Basedtest::cases <bar> (
-		Basedtest::ValueCase {"1", 1, Foo {1, -1}},
-		Basedtest::ValueCase {"2", 2, Foo {2, -2}},
-		Basedtest::ValueCase {"1337", 1337, Foo {1337, -1337}}
-	));
-	Basedtest::SuiteFails successSuiteFails1 = successSuite1.run <true> ();
-	if (successSuiteFails1) return successSuiteFails1.rc();
+	// This macro would return the int passed if != 0
+	BT_CHECK_RC (test_mirror());
 
-	Basedtest::Suite failSuite1 ("FailSuite1", Basedtest::cases <b> (
-		Basedtest::ValueCase {"1", 1, true},
-		Basedtest::ValueCase {"-1", -1, true},
-		Basedtest::ValueCase {"0", 0, false}
-	));
-	Basedtest::SuiteFails failSuiteFails1 = failSuite1.run <true> ();
-	assert (failSuiteFails1);
+	auto fails = test_point_coord_sign();
+	for (const Basedtest::SuiteFail& fail : fails) {
+		std::print ("Iterating over fails: '{}' failed on purpose with '{}'\n", fail.testName, fail.msg);
+	}
 
-	Basedtest::Suite successSuite2 ("SuccessSuite2", Basedtest::tests (
-		Basedtest::ValueTest {"1", 1, true, b},
-		Basedtest::ValueTest {"2", 2, true, b},
-		Basedtest::ValueTest {"-1337", -1337, false, b}
-	));
-	Basedtest::SuiteFails successSuiteFails2 = successSuite2.run <true> ();
-	if (successSuiteFails2) return successSuiteFails2.rc();
+	int rcMixed = test_mixed();
+	BT_CHECK_RC (rcMixed);
 
-	Basedtest::Suite successSuite3 ("SuccessSuite3", Basedtest::cases <tester> (
-		Basedtest::AssertCase {"1", Foo {1, -1}},
-		Basedtest::AssertCase {"2", Foo {2, -2}}
-	));
-	Basedtest::SuiteFails successSuiteFails3 = successSuite3.run <true> ();
-	if (successSuiteFails3) return successSuiteFails3.rc();
+	BT_CHECK_RC (test_single());
 
-	Basedtest::Suite failSuite2 ("FailSuite2", Basedtest::tests (
-		Basedtest::AssertTest {"a", Foo {1, 1}, tester},
-		Basedtest::ValueTest {"1", 1, 2, f},
-		Basedtest::ValueTest {"-1", -1, 0, f},
-		Basedtest::ValueTest {"0", 0, -1, g}
-	));
-	Basedtest::SuiteFails failSuiteFails2 = failSuite2.run <true> ();
-	assert (failSuiteFails2);
-
-	return failSuiteFails2.rc();
+	return 0;
 }
