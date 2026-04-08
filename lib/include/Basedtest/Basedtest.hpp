@@ -9,7 +9,7 @@
 
 #include "Basedlib/Traits.hpp"
 
-#include "Core.hpp"
+#include "Failure.hpp"
 #include "AssertTest.hpp"
 #include "ValueTest.hpp"
 
@@ -52,7 +52,7 @@ struct Suite {
 			([&] {
 				auto result = test.run();
 				if (!result)
-					fails.items.emplace_back (std::move(result).error().bake());
+					fails.items.emplace_back (std::move(result).error().bake(test.name));
 			} (), ...);
 		}, tests);
 
@@ -60,7 +60,7 @@ struct Suite {
 			if (fails) {
 				std::print ("Suite '{}': {} tests failed out of {}:\n", name, fails.size(), size());
 				for (const Failure& fail : fails)
-					std::print (" - {}\n", fail.to_string());
+					std::print (" - {}\n", fail);
 			} else {
 				std::print ("Suite '{}': all {} tests passed\n", name, size());
 			}
