@@ -1,4 +1,4 @@
-#include "Basedtest/Basedtest.hpp"
+#include "Basedtest/Suite.hpp"
 
 #include <cassert>
 #include <format>

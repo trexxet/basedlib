@@ -25,12 +25,12 @@ struct SuiteFail {
 	std::string_view testName;
 	std::string msg;
 
-	static SuiteFail make (const AssertFailure& f, std::string_view testName) noexcept {
+	static SuiteFail make (std::string_view testName, const AssertFailure& f) {
 		return { .testName = testName, .msg = f.msg };
 	}
 
 	template <Basedlib::specialization_of<ValueFailure> VF>
-	static SuiteFail make (const VF& f, std::string_view testName) noexcept {
+	static SuiteFail make (std::string_view testName, const VF& f) {
 		return {
 			.testName = testName,
 			.msg = std::format ("expected '{}', got '{}'", format_value_output (f.expected), format_value_output (f.got))
@@ -69,7 +69,7 @@ struct Suite {
 			([&] {
 				auto result = test.run();
 				if (!result)
-					fails.items.emplace_back (SuiteFail::make (std::move(result).error(), test.name));
+					fails.items.emplace_back (SuiteFail::make (test.name, std::move(result).error()));
 			} (), ...);
 		}, tests);
 

@@ -21,7 +21,7 @@ template <typename Fn, typename Input, typename Output>
 concept ValueTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, ValueTestFunction <Input, Output>>;
 
 template <OutputT Output>
-std::string format_value_output (const Output& val) noexcept {
+std::string format_value_output (const Output& val) {
 	if constexpr (std::formattable <Output, char>)
 		return std::format ("{}", val);
 	else if constexpr (requires { val.to_string(); })
