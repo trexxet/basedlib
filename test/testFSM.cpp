@@ -1,113 +1,141 @@
 #include "Basedlib/FSM.hpp"
+#include "Basedtest/Suite.hpp"
 
-#include <cstdio>
-#include <print>
+#include <format>
+#include <string>
+#include <string_view>
 
-enum class States {
-	ST_A,
-	ST_B,
-	ST_C,
-	ST_D
-};
+#include "Basedlib/Class.hpp"
+#include "Basedlib/PrettyEnum.hpp"
 
-enum class Events {
-	EV_A, // States: A->B, B->C, C->D, D not permitted
-	EV_B  // States: A->A (ignored), B->A, C->B, D->C
-};
+enum class States { ST_A, ST_B, ST_C, ST_D };
+std::string_view to_string (States st) { return Basedlib::FSM::Enum<States>::to_string (st); }
 
-struct Context {
+enum class Events { EV_A, EV_B };
+
+struct Counters {
 	size_t evA_count = 0;
 	size_t evB_count = 0;
+
+	size_t stA_enter = 0;
+	size_t stA_exit = 0;
+	size_t stB_enter = 0;
+	size_t stB_exit = 0;
+	size_t stC_enter = 0;
+
+	BASED_CLASS_DEFAULT_EQUALITY (Counters);
+
+	std::string to_string() const {
+		return std::format (
+			"{{evA_count: {}, evB_count: {}, stA_enter: {}, stA_exit: {}, stB_enter: {}, stB_exit: {}, stC_enter: {}}}",
+			evA_count, evB_count, stA_enter, stA_exit, stB_enter, stB_exit, stC_enter
+		);
+	}
 };
 
-/* Note that callbacks won't have a Context argument if Context is nullptr_t (as by default).
- * If enums has > 32 items, the range should be increased in the Enum template arg (as in PrettyEnum).
- */
-using FSM = Basedlib::FSM::FSM <Basedlib::FSM::Enum<States>, Basedlib::FSM::Enum<Events>, Context,
-	[] (std::string_view s) { std::print ("FSM Logger: {}\n", s); }
->;
-/* This also creates the following type aliases:
- * FSM::State = States
- * FSM::Event = Events
- * FSM::EventCallbackResult = std::optional<States>
- * FSM::StateCallback = void (Context*) or void ()
- * FSM::EventCallback = EventCallbackResult (FSM*, Context*) or EventCallbackResult (FSM*)
- * Also, the following const is declared:
- * FSM::EventNotPermitted = std::nullopt
- */
+using FSM = Basedlib::FSM::FSM <Basedlib::FSM::Enum<States>, Basedlib::FSM::Enum<Events>, Counters>;
 
-void print_callback (std::string_view str) { std::print ("Callback: {}\n", str); }
-
-// Event callback as a separate function
-FSM::EventCallbackResult fsm_ev_a (FSM* fsm, Context* ctx) {
-	print_callback ("event EV_A");
+FSM::EventCallbackResult fsm_ev_a (FSM* fsm, Counters* ctx) {
 	ctx->evA_count++;
 
-	States newState = fsm->state();
+	States state = fsm->state();
 	switch (fsm->state()) {
-		case States::ST_A: newState = States::ST_B; break;
-		case States::ST_B: newState = States::ST_C; break;
-		case States::ST_C: newState = States::ST_D; break;
+		case States::ST_A: state = States::ST_B; break;
+		case States::ST_B: state = States::ST_C; break;
+		case States::ST_C: state = States::ST_D; break;
 		case States::ST_D: default: return FSM::EventNotPermitted;
 	}
 
-	fsm->switch_state (newState);
-	return newState;
+	fsm->switch_state (state);
+	return state;
 }
 
-// State callbacks as separate functions
-void fsm_st_b_enter (Context *ctx) { print_callback ("enter ST_B"); }
-void fsm_st_b_exit  (Context *ctx) { print_callback ("exit ST_B"); }
+void fsm_st_b_enter (Counters *ctx) { ctx->stB_enter++; }
+void fsm_st_b_exit  (Counters *ctx) { ctx->stB_exit++; }
+
+Counters ctx {};
+
+FSM fsm (States::ST_A, &ctx, FSM::make_callbacks (
+	FSM::state_cb <States::ST_A> ({
+		.on_enter = [] (Counters* ctx) { ctx->stA_enter++; },
+		.on_exit  = [] (Counters* ctx) { ctx->stA_exit++; }
+	}),
+	FSM::state_cb <States::ST_B> ({.on_enter = fsm_st_b_enter, .on_exit = fsm_st_b_exit}),
+	FSM::state_cb <States::ST_C> ({.on_enter = [] (Counters* ctx) { ctx->stC_enter++; }}),
+	FSM::event_cb <Events::EV_A> (fsm_ev_a),
+	FSM::event_cb <Events::EV_B> ([] (FSM* fsm, Counters* ctx) -> FSM::EventCallbackResult {
+		ctx->evB_count++;
+
+		States state = fsm->state();
+		switch (fsm->state()) {
+			case States::ST_B: state = States::ST_A; break;
+			case States::ST_C: state = States::ST_B; break;
+			case States::ST_D: state = States::ST_C; break;
+			default: break;
+		}
+
+		fsm->switch_state (state);
+		return state;
+	})
+));
+
+void reset_fsm (States state) {
+	fsm.switch_state (state);
+	ctx = {0};
+}
+
+BT_SCENARIO_TEST (test_fsm_created) {
+	BT_ASSERT_EQ (fsm.state(), States::ST_A);
+	BT_ASSERT (fsm.ctx() == &ctx);
+	BT_SUCCESS;
+}
+
+BT_SCENARIO_TEST (test_ev_a) {
+	reset_fsm (States::ST_A);
+	BT_ASSERT_EQ (fsm.state(), States::ST_A);
+
+	BT_ASSERT_EQ (fsm.event (Events::EV_A), States::ST_B);
+	BT_ASSERT_EQ (fsm.event (Events::EV_A), States::ST_C);
+	BT_ASSERT_EQ (fsm.event (Events::EV_A), States::ST_D);
+
+	BT_ASSERT (fsm.event (Events::EV_A) == FSM::EventNotPermitted);
+	BT_ASSERT_EQ (fsm.state(), States::ST_D);
+
+	Counters expected = {
+		.evA_count = 4, .evB_count = 0,
+		.stA_enter = 0, .stA_exit = 1,
+		.stB_enter = 1, .stB_exit = 1,
+		.stC_enter = 1
+	};
+	BT_ASSERT_EQ (ctx, expected);
+
+	BT_SUCCESS;
+}
+
+BT_SCENARIO_TEST (test_ev_b) {
+	reset_fsm (States::ST_D);
+	BT_ASSERT_EQ (fsm.state(), States::ST_D);
+
+	BT_ASSERT_EQ (fsm.event (Events::EV_B), States::ST_C);
+	BT_ASSERT_EQ (fsm.event (Events::EV_B), States::ST_B);
+	BT_ASSERT_EQ (fsm.event (Events::EV_B), States::ST_A);
+	BT_ASSERT_EQ (fsm.event (Events::EV_B), States::ST_A);
+
+	Counters expected = {
+		.evA_count = 0, .evB_count = 4,
+		.stA_enter = 1, .stA_exit = 0,
+		.stB_enter = 1, .stB_exit = 1,
+		.stC_enter = 1
+	};
+	BT_ASSERT_EQ (ctx, expected);
+
+	BT_SUCCESS;
+}
 
 int main () {
-	Context ctx {};
-
-	FSM fsm (States::ST_A, &ctx, FSM::make_callbacks (
-		// State callbacks as non-capturing lambdas
-		FSM::state_cb <States::ST_A> ({
-			.on_enter = [] (Context* ctx) { print_callback ("enter ST_A"); },
-			.on_exit  = [] (Context* ctx) { print_callback ("exit ST_A"); }
-		}),
-		FSM::state_cb <States::ST_B> ({.on_enter = fsm_st_b_enter, .on_exit = fsm_st_b_exit}),
-		// Callbacks can be safely omitted
-		FSM::state_cb <States::ST_C> ({.on_enter = [] (Context* ctx) { print_callback ("enter ST_C"); }}),
-		FSM::event_cb <Events::EV_A> (fsm_ev_a),
-		// Event callback as a non-capturing lambda
-		FSM::event_cb <Events::EV_B> ([] (FSM* fsm, Context* ctx) -> FSM::EventCallbackResult {
-			print_callback ("event EV_B");
-			ctx->evB_count++;
-
-			States newState = fsm->state();
-			switch (fsm->state()) {
-				case States::ST_B: newState = States::ST_A; break;
-				case States::ST_C: newState = States::ST_B; break;
-				case States::ST_D: newState = States::ST_C; break;
-				default: break;
-			}
-
-			fsm->switch_state (newState);
-			return newState;
-		})
-	));
-
-	auto trigger_event = [&fsm] (Events ev) {
-		if (!fsm.event (ev))
-			std::print ("event({}) returned false (= std::nullopt = FSM::EventNotPermitted)\n", Basedlib::PrettyEnum<Events>::to_string (ev));
-	};
-
-	std::print ("Enter 1 to trigger EV_A, 2 to trigger EV_B, any other input to stop\n");
-	bool running = true;
-	while (running) {
-		int input = std::getchar();
-		if (input == '\n') continue;
-		switch (input - '0') {
-			case 1: trigger_event (Events::EV_A); break;
-			case 2: trigger_event (Events::EV_B); break;
-			default: running = false; break;
-		}
-	}
-
-	std::print ("Event count EV_A: {} EV_B: {}\n", ctx.evA_count, ctx.evB_count);
-
-	return 0;
+	return Basedtest::Suite ("testFSMSuite", tests (
+		BT_SUITE_SCENARIO (test_fsm_created),
+		BT_SUITE_SCENARIO (test_ev_a),
+		BT_SUITE_SCENARIO (test_ev_b)
+	)).run().rc();
 }

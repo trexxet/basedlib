@@ -43,16 +43,16 @@ FSM::EventCallbackResult fsm_ev_a (FSM* fsm, Context* ctx) {
 	print_callback ("event EV_A");
 	ctx->evA_count++;
 
-	States newState = fsm->state();
+	States state = fsm->state();
 	switch (fsm->state()) {
-		case States::ST_A: newState = States::ST_B; break;
-		case States::ST_B: newState = States::ST_C; break;
-		case States::ST_C: newState = States::ST_D; break;
+		case States::ST_A: state = States::ST_B; break;
+		case States::ST_B: state = States::ST_C; break;
+		case States::ST_C: state = States::ST_D; break;
 		case States::ST_D: default: return FSM::EventNotPermitted;
 	}
 
-	fsm->switch_state (newState);
-	return newState;
+	fsm->switch_state (state);
+	return state;
 }
 
 // State callbacks as separate functions
