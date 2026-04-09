@@ -46,8 +46,7 @@ FSM::EventCallbackResult fsm_ev_a (FSM* fsm, Counters* ctx) {
 		case States::ST_D: default: return FSM::EventNotPermitted;
 	}
 
-	fsm->switch_state (state);
-	return state;
+	return fsm->switch_state (state);
 }
 
 void fsm_st_b_enter (Counters *ctx) { ctx->stB_enter++; }
@@ -74,8 +73,7 @@ FSM fsm (States::ST_A, &ctx, FSM::make_callbacks (
 			default: break;
 		}
 
-		fsm->switch_state (state);
-		return state;
+		return fsm->switch_state (state);
 	})
 ));
 

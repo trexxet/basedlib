@@ -34,7 +34,7 @@ public:
 
 	using StateCallback = std::conditional_t <hasContext, void (Context*), void ()>;
 
-	// return new state or nullopt if event is not permitted in current state
+	// return new state or nullopt (EventNotPermitted) if event is not permitted in current state
 	using EventCallbackResult = std::optional<State>;
 	using EventCallback = std::conditional_t <hasContext,
 		EventCallbackResult (FSM*, Context*),
@@ -97,14 +97,15 @@ private:
 	}
 
 public:
-	void switch_state (State next) {
-		if (_state == next) return;
+	State switch_state (State next) {
+		if (_state == next) return next;
 
 		if constexpr (logCallback)
 			logCallback (std::format ("Switch state {} -> {}", States::to_string (_state), States::to_string (next)));
 
 		exit_state();
 		enter_state (next);
+		return next;
 	}
 
 	EventCallbackResult event (Event ev) {
