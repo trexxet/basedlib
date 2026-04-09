@@ -13,8 +13,8 @@
 #include "ValueTest.hpp"
 
 #define BT_CHECK_RC(f) do { \
-	int rc = static_cast<int> ((f)); \
-	if (rc != 0) return rc; \
+	int __bt_rc = static_cast<int> ((f)); \
+	if (__bt_rc != 0) return __bt_rc; \
 } while (0)
 
 namespace Basedtest {
