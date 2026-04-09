@@ -41,7 +41,7 @@ SuiteFails test_point_coord_sign () {
 BT_SCENARIO_TEST (tester_point_coord_compare) {
 	Point p {-1, 2};
 	if (p.y < p.x) BT_FAIL ("Wrong coordinates in p!");
-	BT_ASSERT (p.x != p.y);
+	BT_ASSERT_NE (p.x, p.y);
 	BT_SUCCESS;
 }
 int inc (const int& x) { return x + 1; }
@@ -68,35 +68,35 @@ int check_rc (int rc) {
 }
 
 BT_SCENARIO_TEST (test_check_rc) {
-	BT_ASSERT (check_rc (0) == 0);
-	BT_ASSERT (check_rc (1) == 1);
+	BT_ASSERT_EQ (check_rc (0), 0);
+	BT_ASSERT_EQ (check_rc (1), 1);
 	BT_SUCCESS;
 }
 
 BT_SCENARIO_TEST (test_value_case) {
-	BT_ASSERT (test_mirror() == 0);
+	BT_ASSERT_EQ (test_mirror(), 0);
 	BT_SUCCESS;
 }
 
 BT_SCENARIO_TEST (test_assert_case) {
 	auto fails = test_point_coord_sign();
 	BT_ASSERT (fails);
-	BT_ASSERT (fails.size() == 1);
-	BT_ASSERT (fails.items[0].testName == "{2, 3}");
-	BT_ASSERT (fails.items[0].msg == "assertion 'd.x == -d.y' failed");
+	BT_ASSERT_EQ (fails.size(), 1);
+	BT_ASSERT_EQ (fails.items[0].testName, "{2, 3}");
+	BT_ASSERT_EQ (fails.items[0].msg, "assertion 'd.x == -d.y' failed");
 	BT_SUCCESS;
 }
 
 BT_SCENARIO_TEST (test_mixed_test_suite) {
-	BT_ASSERT (test_mixed() == 0);
+	BT_ASSERT_EQ (test_mixed(), 0);
 	BT_SUCCESS;
 }
 
 BT_SCENARIO_TEST (test_single_value_test) {
 	auto result = test_single();
 	BT_ASSERT (!result);
-	BT_ASSERT ((result.error().expected == Point {21, 1}));
-	BT_ASSERT ((result.error().got == Point {2, 1}));
+	BT_ASSERT_EQ (result.error().expected, (Point {21, 1}));
+	BT_ASSERT_EQ (result.error().got, (Point {2, 1}));
 	BT_SUCCESS;
 }
 

@@ -13,5 +13,6 @@ add_basedlib_test(basedlib_test_ringbuffer testRingBuffer.cpp)
 add_basedlib_test(basedlib_test_fsm testFSM.cpp)
 add_basedlib_test(basedlib_test_prettyenum testPrettyEnum.cpp)
 
-add_test(NAME basedlib_test_test COMMAND basedlib_test_test)
+add_test(NAME basedlib_test_fsm COMMAND basedlib_test_fsm)
 add_test(NAME basedlib_test_ringbuffer COMMAND basedlib_test_ringbuffer)
+add_test(NAME basedlib_test_test COMMAND basedlib_test_test)
