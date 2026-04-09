@@ -9,6 +9,8 @@
 #include "Basedlib/Function.hpp"
 #include "Basedlib/Traits.hpp"
 
+#include "Common.hpp"
+
 #define BT_ASSERT_TEST(fn_name, InputType, inputName) \
 Basedtest::AssertTestResult fn_name (const InputType& inputName)
 
@@ -23,8 +25,22 @@ Basedtest::AssertTestResult fn_name (const InputType& inputName)
 } while (0)
 
 #define BT_ASSERT(expr) do { \
-	if (!(expr)) BT_FAIL(std::format ("assertion '{}' failed", #expr)); \
+	if (!(expr)) BT_FAIL (std::format ("assertion '{}' failed", #expr)); \
 } while (0)
+
+#define BT_ASSERT_EQ_CMP(lhs, rhs, op) do { \
+	const auto& __bt_lhs = (lhs); \
+	const auto& __bt_rhs = (rhs); \
+	static_assert (std::equality_comparable_with <decltype(__bt_lhs), decltype(__bt_rhs)>, \
+		"BT_ASSERT_EQ_CMP requires equality-comparable operands"); \
+	if (!(__bt_lhs op __bt_rhs)) BT_FAIL (std::format ( \
+		"assertion {} {} {} failed: lhs ({}), rhs ({})", #lhs, #op, #rhs, \
+		Basedtest::format_value (__bt_lhs), Basedtest::format_value (__bt_rhs) \
+	)); \
+} while (0)
+
+#define BT_ASSERT_EQ(lhs, rhs) BT_ASSERT_EQ_CMP (lhs, rhs, ==)
+#define BT_ASSERT_NE(lhs, rhs) BT_ASSERT_EQ_CMP (lhs, rhs, !=)
 
 namespace Basedtest {
 

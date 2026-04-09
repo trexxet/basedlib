@@ -2,12 +2,12 @@
 
 #include <concepts>
 #include <expected>
-#include <format>
-#include <string>
 #include <string_view>
 
 #include "Basedlib/Function.hpp"
 #include "Basedlib/Traits.hpp"
+
+#include "Common.hpp"
 
 namespace Basedtest {
 
@@ -19,15 +19,6 @@ using ValueTestFunction = Basedlib::FunctionRef <Output (const Input&)>;
 
 template <typename Fn, typename Input, typename Output>
 concept ValueTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, ValueTestFunction <Input, Output>>;
-
-template <OutputT Output>
-std::string format_value_output (const Output& val) {
-	if constexpr (std::formattable <Output, char>)
-		return std::format ("{}", val);
-	else if constexpr (requires { val.to_string(); })
-		return std::string (val.to_string());
-	else return "<unprintable>";
-}
 
 /// @brief ValueFailure stores the expected and got value for failed test
 template <OutputT Output>

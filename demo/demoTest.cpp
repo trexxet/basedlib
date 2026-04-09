@@ -38,7 +38,8 @@ int test_mirror () {
 
 // 2) Multiple assertion test cases for the same BT_ASSERT_TEST function
 BT_ASSERT_TEST (tester_point_coord_sign, Point, d) {
-	BT_ASSERT (d.x == -d.y);
+	BT_ASSERT (true);
+	BT_ASSERT_EQ (d.x, -d.y);
 	BT_SUCCESS;
 }
 Basedtest::SuiteFails test_point_coord_sign () {
@@ -57,7 +58,7 @@ BT_SCENARIO_TEST (tester_point_coord_compare) {
 	Point p {-1, 2};
 	// Assert/Scenario test fail can be triggered manually
 	if (p.y < p.x) BT_FAIL ("Wrong coordinates in p!");
-	BT_ASSERT (p.x != p.y);
+	BT_ASSERT_NE (p.x, p.y);
 	BT_SUCCESS;
 }
 int inc (const int& x) { return x + 1; }

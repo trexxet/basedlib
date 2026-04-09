@@ -9,6 +9,7 @@
 
 #include "Basedlib/Traits.hpp"
 
+#include "Common.hpp"
 #include "AssertTest.hpp"
 #include "ValueTest.hpp"
 
@@ -38,7 +39,7 @@ struct SuiteFail {
 	static SuiteFail make (std::string_view testName, const VF& f) {
 		return {
 			.testName = testName,
-			.msg = std::format ("expected '{}', got '{}'", format_value_output (f.expected), format_value_output (f.got))
+			.msg = std::format ("expected '{}', got '{}'", format_value (f.expected), format_value (f.got))
 		};
 	}
 };
