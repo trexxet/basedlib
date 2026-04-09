@@ -3,6 +3,7 @@ project(basedlib VERSION 0.1)
 
 enable_testing()
 option(BASEDLIB_BUILD_TESTS "Build basedlib tests" OFF)
+option(BASEDLIB_BUILD_DEMOS "Build basedlib demos" OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 set(CMAKE_CXX_STANDARD 23)
@@ -12,4 +13,8 @@ add_subdirectory(lib)
 
 if(BASEDLIB_BUILD_TESTS)
 	add_subdirectory(test)
+endif()
+
+if(BASEDLIB_BUILD_DEMOS)
+	add_subdirectory(demo)
 endif()
