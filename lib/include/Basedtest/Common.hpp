@@ -16,4 +16,10 @@ std::string format_value (const T& val) {
 	else return "<unprintable>";
 }
 
+template <typename T> [[gnu::noinline]]
+T black_box (T val) {
+	asm volatile ("" : "+rm"(val) : : "memory"); // GCC SUPREMACY
+	return val;
+}
+
 }

@@ -27,8 +27,9 @@ int test_mirror () {
 	)).run<false>().rc();
 }
 
+int assert_line;
 BT_ASSERT_TEST (tester_point_coord_sign, Point, d) {
-	BT_ASSERT (d.x == -d.y);
+	BT_ASSERT (d.x == -d.y); assert_line = __LINE__;
 	BT_SUCCESS;
 }
 SuiteFails test_point_coord_sign () {
@@ -83,7 +84,7 @@ BT_SCENARIO_TEST (test_assert_case) {
 	BT_ASSERT (fails);
 	BT_ASSERT_EQ (fails.size(), 1);
 	BT_ASSERT_EQ (fails.items[0].testName, "{2, 3}");
-	BT_ASSERT_EQ (fails.items[0].msg, "assertion 'd.x == -d.y' failed");
+	BT_ASSERT_EQ (fails.items[0].msg, std::format ("assertion 'd.x == -d.y' failed at line {}", assert_line));
 	BT_SUCCESS;
 }
 
