@@ -5,14 +5,27 @@
 #include <type_traits>
 #include <utility>
 
+#include "Traits.hpp"
+
 namespace Basedlib {
+
+//// Strip noexcept from function signature
+
+template <typename T>
+struct strip_noexcept { using Type = T; };
+
+template <typename Ret, typename... Args>
+struct strip_noexcept <Ret (Args...) noexcept> { using Type = Ret (Args...); };
+
+template <typename T>
+using strip_noexcept_t = typename strip_noexcept<T>::Type;
 
 // TODO: use std::function_ptr when available
 
 /// @brief Function is a compile-time nullable function pointer wrapper, also
 /// capable of handling non-capturing lambdas.
 template <typename Signature> requires std::is_function_v<Signature>
-class Function;
+struct Function;
 
 template <typename Ret, typename... Args>
 struct Function <Ret (Args...)> {
@@ -37,7 +50,7 @@ struct Function <Ret (Args...)> {
 
 /// @brief FunctionRef is similar to Function, but non-nullable.
 template <typename Signature> requires std::is_function_v<Signature>
-class FunctionRef;
+struct FunctionRef;
 
 template <typename Ret, typename... Args>
 struct FunctionRef <Ret (Args...)> {
@@ -61,6 +74,18 @@ struct FunctionRef <Ret (Args...)> {
 		if constexpr (std::is_void_v<Ret>) ptr (std::forward<Args> (args)...);
 		else return ptr (std::forward<Args> (args)...);
 	}
+};
+
+/// @brief FunctionTraits can be used to deduce argument/return types of functions & non-capturing lambdas
+template <typename>
+struct FunctionTraits;
+
+template <typename Ret, typename... Args>
+struct FunctionTraits <Ret (Args...)> {
+	using ReturnType = Ret;
+	static constexpr size_t argc = sizeof...(Args);
+	template <size_t i>
+	using ArgType = variadic_t<i, Args...>;
 };
 
 }
