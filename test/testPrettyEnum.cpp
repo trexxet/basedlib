@@ -1,38 +1,110 @@
 #include "Basedlib/PrettyEnum.hpp"
+#include "Basedtest/Suite.hpp"
 
-#include <cstdio>
-#include <print>
+#include <string_view>
 
-// Works for both scoped and unscoped enums
-enum class Color {
-	Red,
-	Green,
-	Blue
+using namespace Basedtest;
+
+enum class Color { Red, Green, Blue };
+
+constexpr std::string_view to_string (Color c) {
+	switch (c) {
+		case Color::Red: return "Red";
+		case Color::Green: return "Green";
+		case Color::Blue: return "Blue";
+	};
+	return "";
+}
+
+constexpr std::string_view to_scoped_string (Color c) {
+	switch (c) {
+		case Color::Red: return "Color::Red";
+		case Color::Green: return "Color::Green";
+		case Color::Blue: return "Color::Blue";
+	};
+	return "";
+}
+
+using PrettyColor = Basedlib::PrettyEnum<Color>;
+using MetaColor = PrettyColor::Meta;
+
+template <Color c, bool scoped = false>
+constexpr auto make_meta_v_name_test (std::string_view name) {
+	return ValueTest { name,
+		[] { if constexpr (scoped) return to_scoped_string (c); return to_string (c); } (),
+		[] { return MetaColor::v_name<c, scoped>(); }
+	};
 };
 
-// If enum has > 32 fields, the range should be increased in the PrettyEnum template arg
-using PrettyColor = Basedlib::PrettyEnum<Color>;
-using MetaColor = PrettyColor::Meta; // same as Basedlib::Meta<Color>;
+BT_SCENARIO_TEST (test_meta) {
+	BT_ASSERT_EQ (MetaColor::t_name(), "Color");
 
-/* Meta can be used for compile-time values only, but for many types (I suppose).
- * PrettyEnum can be used for dense enums both in compile-time and runtime.
- */
+	BT_ASSERT_RC (Suite ("Meta::v_name", tests (
+		make_meta_v_name_test <Color::Red> ("meta::v_name_r"),
+		make_meta_v_name_test <Color::Green> ("meta::v_name_g"),
+		make_meta_v_name_test <Color::Blue> ("meta::v_name_b")
+	)).run_rc());
+
+	BT_ASSERT_RC (Suite ("Meta::v_name_scoped", tests (
+		make_meta_v_name_test <Color::Red, true> ("meta::v_name_scoped_r"),
+		make_meta_v_name_test <Color::Green, true> ("meta::v_name_scoped_g"),
+		make_meta_v_name_test <Color::Blue, true> ("meta::v_name_scoped_b")
+	)).run_rc());
+
+	BT_SUCCESS;
+}
+
+template <Color c, bool scoped = false>
+constexpr auto make_prettycolor_name_case (std::string_view name) {
+	return ValueCase { name, c,
+		[] { if constexpr (scoped) return to_scoped_string (c); return to_string (c); } ()
+	};
+};
+
+BT_SCENARIO_TEST (test_pretty_static) {
+	BT_ASSERT_EQ (PrettyColor::size, 3);
+
+	BT_ASSERT_RC (Suite ("Static PrettyColor::val", cases <input_as_constref<PrettyColor::val>> (
+		ValueCase {"prettycolor::val_r", size_t{0}, Color::Red},
+		ValueCase {"prettycolor::val_g", size_t{1}, Color::Green},
+		ValueCase {"prettycolor::val_b", size_t{2}, Color::Blue}
+	)).run_rc());
+
+	BT_ASSERT_RC (Suite ("Static PrettyColor::idx", cases <input_as_constref<PrettyColor::idx>> (
+		ValueCase {"prettycolor::idx_r", Color::Red, size_t{0}},
+		ValueCase {"prettycolor::idx_g", Color::Green, size_t{1}},
+		ValueCase {"prettycolor::idx_b", Color::Blue, size_t{2}}
+	)).run_rc());
+
+	BT_ASSERT_RC (Suite ("Static PrettyColor::to_string", cases <input_as_constref<PrettyColor::to_string>> (
+		make_prettycolor_name_case <Color::Red> ("prettycolor::to_string_r"),
+		make_prettycolor_name_case <Color::Green> ("prettycolor::to_string_g"),
+		make_prettycolor_name_case <Color::Blue> ("prettycolor::to_string_b")
+	)).run_rc());
+
+	BT_ASSERT_RC (Suite ("Static PrettyColor::to_scoped_string", cases <input_as_constref<PrettyColor::to_scoped_string>> (
+		make_prettycolor_name_case <Color::Red, true> ("prettycolor::to_scoped_string_r"),
+		make_prettycolor_name_case <Color::Green, true> ("prettycolor::to_scoped_string_g"),
+		make_prettycolor_name_case <Color::Blue, true> ("prettycolor::to_scoped_string_b")
+	)).run_rc());
+
+	BT_SUCCESS;
+}
+
+BT_SCENARIO_TEST (test_pretty_runtime) {
+	volatile size_t i = Basedtest::black_box (2);
+	volatile Color c = PrettyColor::val (i);
+	BT_ASSERT_EQ (c, Color::Blue);
+	BT_ASSERT_EQ (PrettyColor::idx (c), i);
+	BT_ASSERT_EQ (PrettyColor::to_scoped_string(c), "Color::Blue");
+	BT_ASSERT_EQ (PrettyColor::to_string(c), "Blue");
+	BT_SUCCESS;
+}
 
 int main () {
-	Color c;
-
-	int input = std::getchar() - '0';
-	if (PrettyColor::has_idx (input)) {
-		c = PrettyColor::val (input);
-	} else {
-		std::print ("Wrong input index!\n");
-		return 0;
-	}
-
-	std::print ("Type: {}, size: {}\n", MetaColor::t_name(), PrettyColor::size);
-	std::print ("Runtime scoped/unscoped: {}, {}\n", PrettyColor::to_scoped_string(c), PrettyColor::to_string(c));
-	std::print ("Static scoped/unscoped using PrettyColor: {}, {}\n", PrettyColor::to_scoped_string(Color::Red), PrettyColor::to_string(Color::Red));
-	std::print ("Same but using MetaColor: {}, {}\n", MetaColor::v_name<Color::Green, true>(), MetaColor::v_name<Color::Green>());
-
-	return 0;
+	return Basedtest::Suite ("PrettyEnum", Basedtest::tests (
+		BT_SUITE_SCENARIO (test_meta),
+		BT_SUITE_SCENARIO (test_pretty_static),
+		BT_SUITE_SCENARIO (test_pretty_runtime)
+	)).run_rc();
 }
