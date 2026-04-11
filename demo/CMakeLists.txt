@@ -7,5 +7,6 @@ function(add_basedlib_demo demoName)
 endfunction()
 
 add_basedlib_demo(basedlib_demo_fsm demoFSM.cpp)
-add_basedlib_test(basedlib_demo_prettyenum demoPrettyEnum.cpp)
+add_basedlib_demo(basedlib_demo_multibyte demoMultibyte.cpp)
+add_basedlib_demo(basedlib_demo_prettyenum demoPrettyEnum.cpp)
 add_basedlib_demo(basedlib_demo_test demoTest.cpp)
