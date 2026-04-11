@@ -70,13 +70,13 @@ int check_rc (int rc) {
 }
 
 BT_SCENARIO_TEST (test_check_rc) {
-	BT_ASSERT_EQ (check_rc (0), 0);
+	BT_ASSERT_Z (check_rc (0));
 	BT_ASSERT_EQ (check_rc (1), 1);
 	BT_SUCCESS;
 }
 
 BT_SCENARIO_TEST (test_value_case) {
-	BT_ASSERT_EQ (test_mirror(), 0);
+	BT_ASSERT_RC (test_mirror());
 	BT_SUCCESS;
 }
 
@@ -90,7 +90,7 @@ BT_SCENARIO_TEST (test_assert_case) {
 }
 
 BT_SCENARIO_TEST (test_mixed_test_suite) {
-	BT_ASSERT_EQ (test_mixed(), 0);
+	BT_ASSERT_RC (test_mixed());
 	BT_SUCCESS;
 }
 

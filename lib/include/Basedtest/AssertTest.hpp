@@ -42,6 +42,9 @@ Basedtest::AssertTestResult fn_name (const InputType& inputName)
 #define BT_ASSERT_EQ(lhs, rhs) BT_ASSERT_EQ_CMP (lhs, rhs, ==)
 #define BT_ASSERT_NE(lhs, rhs) BT_ASSERT_EQ_CMP (lhs, rhs, !=)
 
+#define BT_ASSERT_Z(expr) BT_ASSERT_EQ(expr, 0)
+#define BT_ASSERT_RC(expr) BT_ASSERT_Z(expr)
+
 namespace Basedtest {
 
 struct AssertFailure {

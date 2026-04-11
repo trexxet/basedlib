@@ -59,6 +59,10 @@ BT_SCENARIO_TEST (tester_point_coord_compare) {
 	// Assert/Scenario test fail can be triggered manually
 	if (p.y < p.x) BT_FAIL ("Wrong coordinates in p!");
 	BT_ASSERT_NE (p.x, p.y);
+	// You can make and run suites in tests
+	BT_ASSERT_RC (Basedtest::Suite ("suiteInTest", tests (
+		Basedtest::ScenarioTest {"test_in_suite_in_test", [] () -> Basedtest::AssertTestResult { BT_SUCCESS; }}
+	)).run<false>().rc());
 	BT_SUCCESS;
 }
 int inc (const int& x) { return x + 1; }
