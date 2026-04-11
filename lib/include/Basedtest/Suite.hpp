@@ -92,6 +92,9 @@ struct Suite {
 		return fails;
 	}
 
+	template <bool doPrints = true>
+	int run_rc() const { return run<doPrints>().rc(); }
+
 	consteval Suite (std::string_view name, std::tuple<Tests...> tests)
 		: name (name), tests (std::move (tests)) { }
 	Suite () = delete;

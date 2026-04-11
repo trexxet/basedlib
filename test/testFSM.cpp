@@ -135,5 +135,5 @@ int main () {
 		BT_SUITE_SCENARIO (test_fsm_created),
 		BT_SUITE_SCENARIO (test_ev_a),
 		BT_SUITE_SCENARIO (test_ev_b)
-	)).run().rc();
+	)).run_rc();
 }

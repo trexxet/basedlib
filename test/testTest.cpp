@@ -24,7 +24,7 @@ int test_mirror () {
 		ValueCase {.name = "{1, 1}", .input = Point {1, 1}, .expected = Point {-1, -1}},
 		ValueCase {"{2, -3}", Point {2, -3}, Point {-2, 3}},
 		ValueCase {"{-1337, -1337}", pointA, mirror_pointA}
-	)).run<false>().rc();
+	)).run_rc<false>();
 }
 
 int assert_line;
@@ -54,7 +54,7 @@ int test_mixed () {
 		AssertTest {"point1", Point {1, -1}, tester_point_coord_sign},
 		ScenarioTest {"point2", tester_point_coord_compare},
 		BT_SUITE_SCENARIO (tester_point_coord_compare)
-	)).run<false>().rc();
+	)).run_rc<false>();
 }
 
 ValueTestResult<Point> test_single () {
@@ -109,5 +109,5 @@ int main () {
 		BT_SUITE_SCENARIO (test_assert_case),
 		BT_SUITE_SCENARIO (test_mixed_test_suite),
 		BT_SUITE_SCENARIO (test_single_value_test)
-	)).run().rc();
+	)).run_rc();
 }

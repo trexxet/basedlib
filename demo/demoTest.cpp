@@ -62,7 +62,7 @@ BT_SCENARIO_TEST (tester_point_coord_compare) {
 	// You can make and run suites in tests
 	BT_ASSERT_RC (Basedtest::Suite ("suiteInTest", tests (
 		Basedtest::ScenarioTest {"test_in_suite_in_test", [] () -> Basedtest::AssertTestResult { BT_SUCCESS; }}
-	)).run<false>().rc());
+	)).run_rc<false>());
 	BT_SUCCESS;
 }
 int inc (const int& x) { return x + 1; }
@@ -77,7 +77,7 @@ int test_mixed () {
 		AssertTest {"point1", Point {1, -1}, tester_point_coord_sign},
 		ScenarioTest {"point2", tester_point_coord_compare},
 		BT_SUITE_SCENARIO (tester_point_coord_compare) // Sugar macro to make a scenario with name equal to function name
-	)).run().rc();
+	)).run_rc();
 }
 
 // 4) Tests can be run without suite. In that case ValueTest can return mismatched values.
