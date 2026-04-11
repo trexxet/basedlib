@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <print>
@@ -14,20 +15,26 @@ class LogFile {
 	std::ofstream f;
 
 public:
-	LogFile (const char *filename) {
-		if (!filename) return;
-		f.open (filename);
+	explicit LogFile (const std::filesystem::path& path) {
+		f.open (path);
+		// TODO: C++26 can format filesystem::path
 		if (!f) [[unlikely]]
-			throw std::runtime_error (std::format ("Can't open {} for write", filename));
+			throw std::runtime_error (std::format ("Can't open {} for write", path.string()));
 	}
+	LogFile () = delete;
 
 	void print (std::string_view str) {
 		if (!f || str.empty()) [[unlikely]] return;
 		std::print (f, "{}", str);
 		f.flush();
 	}
-	void print (const char* str) { print (std::string_view (str)); }
-	void print (const std::string& str) { print (std::string_view (str)); }
+
+	template <typename... Args>
+	void print (std::format_string<Args...> fmt, Args&&... args) {
+		if (!f) [[unlikely]] return;
+		std::print (f, fmt, std::forward<Args>(args)...);
+		f.flush();
+	}
 
 	BASED_CLASS_NO_COPY_DEFAULT_MOVE (LogFile);
 };

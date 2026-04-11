@@ -45,7 +45,7 @@ BT_SCENARIO_TEST (test_rb_append_wrap) {
 }
 
 int main () {
-	return Basedtest::Suite ("testRingbufferSuite", tests (
+	return Basedtest::Suite ("RingBuffer", tests (
 		BT_SUITE_SCENARIO (test_rb_create),
 		BT_SUITE_SCENARIO (test_rb_append_no_wrap),
 		BT_SUITE_SCENARIO (test_rb_append_wrap)
