@@ -26,6 +26,17 @@ using ValueTestFunction = typename ValueTestFunction_S<Input, Output>::Type;
 template <typename Fn, typename Input, typename Output>
 concept ValueTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, ValueTestFunction <Input, Output>>;
 
+template <auto Fn>
+requires std::is_pointer_v<decltype(+Fn)> && std::is_function_v<std::remove_pointer_t<decltype(+Fn)>>
+inline constexpr auto input_as_constref = [] {
+	using Signature = Basedlib::strip_noexcept_t <std::remove_pointer_t <decltype(+Fn)>>;
+	using Traits = Basedlib::FunctionTraits <Signature>;
+	static_assert (Traits::argc == 1, "Function must be unary");
+	using Input = std::remove_cvref_t <typename Traits::ArgType<0>>;
+	using Output = Traits::ReturnType;
+	return ValueTestFunction<Input, Output> ([] (const Input& input) -> Output { return Fn (input); } );
+} ();
+
 /// @brief ValueFailure stores the expected and got value for failed test
 template <OutputT Output>
 struct ValueFailure {
