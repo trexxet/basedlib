@@ -15,7 +15,13 @@ template <typename T>
 concept OutputT = std::equality_comparable <T>;
 
 template <typename Input, OutputT Output>
-using ValueTestFunction = Basedlib::FunctionRef <Output (const Input&)>;
+struct ValueTestFunction_S { using Type = Basedlib::FunctionRef <Output (const Input&)>; };
+
+template <OutputT Output>
+struct ValueTestFunction_S <void, Output> { using Type = Basedlib::FunctionRef <Output ()>; };
+
+template <typename Input, OutputT Output>
+using ValueTestFunction = typename ValueTestFunction_S<Input, Output>::Type;
 
 template <typename Fn, typename Input, typename Output>
 concept ValueTestFunctionT = std::convertible_to <std::remove_cvref_t <Fn>, ValueTestFunction <Input, Output>>;
@@ -47,14 +53,32 @@ struct ValueTest {
 	}
 };
 
+template <OutputT Output>
+struct ValueTest <void, Output> {
+	std::string_view name;
+	Output expected;
+	ValueTestFunction <void, Output> fn;
+
+	[[nodiscard]]
+	ValueTestResult <Output> run () const {
+		Output got = fn();
+		if (got != expected) [[unlikely]]
+			return std::unexpected (ValueFailure <Output> { expected, std::move (got) });
+		return {};
+	}
+};
+
 template <typename Input, OutputT Output, ValueTestFunctionT <Input, Output> Fn>
 ValueTest (std::string_view, Input, Output, Fn) -> ValueTest <Input, Output>;
+
+template <OutputT Output, ValueTestFunctionT <void, Output> Fn>
+ValueTest (std::string_view, Output, Fn) -> ValueTest <void, Output>;
 
 template <typename T>
 concept ValueTestT = Basedlib::specialization_of <T, ValueTest>;
 
 /// @brief ValueCase is a special case of ValueTest. It can be used only within Suite, so
-/// multiple Cases share the same test function.
+/// multiple Cases share the same test function and must have Input.
 template <typename Input, OutputT Output>
 struct ValueCase {
 	std::string_view name;

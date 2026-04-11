@@ -50,6 +50,7 @@ int test_mixed () {
 	return Suite ("testMixed", tests (
 		ValueTest {"inc1", 1, 2, inc},
 		ValueTest {"dec2", 2, 1, [] (const int& x) { return x - 1; } },
+		ValueTest {"no_input", 4, [] () { return black_box (4); } },
 		AssertTest {"point1", Point {1, -1}, tester_point_coord_sign},
 		ScenarioTest {"point2", tester_point_coord_compare},
 		BT_SUITE_SCENARIO (tester_point_coord_compare)

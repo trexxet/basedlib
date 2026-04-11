@@ -67,6 +67,9 @@ int test_mixed () {
 	return Suite ("testMixed", tests (
 		ValueTest {"inc1", 1, 2, inc}, // ValueTests and AssertTests can't be constructed with designated initializers as they rely on CTAD
 		ValueTest {"dec2", 2, 1, [] (const int& x) { return x - 1; } }, // Lambdas can be used
+		// black_box turns the value into an opaque runtime value.
+		// It does not prevent constant folding of the argument expression.
+		ValueTest {"no_input", 2, [] () { return black_box (2); } }, // ValueTest can be also used without input
 		AssertTest {"point1", Point {1, -1}, tester_point_coord_sign},
 		ScenarioTest {"point2", tester_point_coord_compare},
 		BT_SUITE_SCENARIO (tester_point_coord_compare) // Sugar macro to make a scenario with name equal to function name
