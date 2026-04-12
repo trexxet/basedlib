@@ -16,6 +16,8 @@ std::string format_value (const T& val) {
 	else return "<unprintable>";
 }
 
+/// @brief Barrier for compile-time optimization.
+/// Effectively tells compiler to forget what's inside variable.
 template <typename T> [[gnu::noinline]]
 T black_box (T val) {
 	asm volatile ("" : "+rm"(val) : : "memory"); // GCC SUPREMACY

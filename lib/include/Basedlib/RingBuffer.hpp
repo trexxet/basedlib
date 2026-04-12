@@ -1,16 +1,20 @@
 #pragma once
 
-#include <stdexcept>
+#include <cassert>
 #include <vector>
 
 namespace Basedlib {
 
+/// @brief Append-only ring buffer. [0] (front) is the oldest item, back is newest.
 template <typename T>
 class RingBuffer {
 	std::vector<T> data;
-	size_t head = 0, cap;
+	/// @brief head is the next write position
+	size_t head = 0;
+	size_t cap;
 
-	size_t wrap (size_t pos) const noexcept { return pos >= cap ? pos % cap : pos; }
+	size_t wrap (size_t pos) const noexcept { return pos == cap ? 0 : pos; }
+
 public:
 	size_t capacity () const noexcept { return cap; }
 	size_t size () const noexcept { return data.size(); }
@@ -23,19 +27,26 @@ public:
 		head = wrap (head + 1);
 	}
 
-	const T& operator[] (size_t idx) const {
-		if (idx >= size()) [[unlikely]] throw std::out_of_range ("idx >= size()");
+	const T& operator[] (size_t idx) const noexcept {
+		assert (idx < size() && "RingBuffer: [idx] >= size()");
 		if (full()) [[likely]] idx = wrap (head + idx);
 		return data[idx];
 	}
 
-	const T& back () const {
-		if (empty()) [[unlikely]] throw std::out_of_range ("size() == 0");
-		if (full()) [[likely]] return data[(head > 0 ? head : cap) - 1];
-		return data[head - 1];
+	const T& back () const noexcept {
+		assert (!empty() && "RingBuffer: back() on empty");
+		return data[(head > 0 ? head : cap) - 1];
 	}
 
-	RingBuffer (size_t capacity) : cap (capacity) { data.reserve (capacity); }
+	const T& front () const noexcept {
+		assert (!empty() && "RingBuffer: front() on empty");
+		return full() ? data[head] : data[0];
+	}
+
+	RingBuffer (size_t capacity) : cap (capacity) {
+		assert (cap > 0 && "RingBuffer must have capacity > 0");
+		data.reserve (cap);
+	}
 	RingBuffer () = delete;
 
 	class Iterator {
@@ -43,13 +54,13 @@ public:
 		size_t idx;
 	public:
 		Iterator (const RingBuffer& rb, size_t idx) : rb (rb), idx (idx) { }
-		bool operator!= (const Iterator& other) const { return idx != other.idx; }
+		bool operator!= (const Iterator& other) const noexcept { return idx != other.idx; }
 		const T& operator*() const { return rb[idx]; }
-		Iterator& operator++() { idx++; return *this; }
+		Iterator& operator++() noexcept { idx++; return *this; }
 	};
 
-	Iterator begin() const { return Iterator (*this, 0); }
-	Iterator end() const { return Iterator (*this, size()); }
+	Iterator begin() const noexcept { return Iterator (*this, 0); }
+	Iterator end() const noexcept { return Iterator (*this, size()); }
 };
 
 }
