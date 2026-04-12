@@ -7,6 +7,7 @@ function(add_basedlib_test testName)
 	add_test(NAME ${testName} COMMAND ${testName})
 endfunction()
 
+add_basedlib_test(bl_test_debounce testDebounceTimer.cpp)
 add_basedlib_test(bl_test_fsm testFSM.cpp)
 add_basedlib_test(bl_test_logfile testLogFile.cpp)
 add_basedlib_test(bl_test_multibyte testMultibyte.cpp)

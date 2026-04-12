@@ -15,10 +15,12 @@ class DebounceTimer {
 public:
 	void trigger () noexcept { last = now(); }
 	bool ready () const noexcept { return now() - last >= duration; }
+	bool operator() () const { return ready(); }
 
 	template <typename Rep, typename Period>
-	DebounceTimer (std::chrono::duration<Rep, Period> duration) noexcept
-		: duration (std::chrono::duration_cast<Clock::duration> (duration)), last (Tp::min()) { }
+	DebounceTimer (std::chrono::duration<Rep, Period> duration) noexcept :
+		duration (std::chrono::duration_cast<Clock::duration> (duration)),
+		last (now() - this->duration) { }
 };
 
 }
