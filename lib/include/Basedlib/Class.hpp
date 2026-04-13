@@ -1,9 +1,9 @@
 #pragma once
 
-#define BASED_CLASS_COPY_CONSTRUCTOR(c) c (const c&)
-#define BASED_CLASS_MOVE_CONSTRUCTOR(c) c (c&&)
-#define BASED_CLASS_COPY_ASSIGNMENT(c) c& operator= (const c&)
-#define BASED_CLASS_MOVE_ASSIGNMENT(c) c& operator= (c&&)
+#define BASED_CLASS_COPY_CONSTRUCTOR(c) c (const c& other)
+#define BASED_CLASS_MOVE_CONSTRUCTOR(c) c (c&& other)
+#define BASED_CLASS_COPY_ASSIGNMENT(c) c& operator= (const c& other)
+#define BASED_CLASS_MOVE_ASSIGNMENT(c) c& operator= (c&& other)
 
 #define BASED_CLASS_DECL_COPY(c, d) \
 	BASED_CLASS_COPY_CONSTRUCTOR(c) = d; \
@@ -22,6 +22,6 @@
 	BASED_CLASS_NO_COPY(c); \
 	BASED_CLASS_DEFAULT_MOVE(c);
 
-#define BASED_CLASS_EQUALITY_OPERATOR(c) bool operator== (const c&) const
+#define BASED_CLASS_EQUALITY_OPERATOR(c) bool operator== (const c& other) const
 #define BASED_CLASS_DECL_EQUALITY(c, d) BASED_CLASS_EQUALITY_OPERATOR(c) = d;
 #define BASED_CLASS_DEFAULT_EQUALITY(c) BASED_CLASS_DECL_EQUALITY(c, default)
