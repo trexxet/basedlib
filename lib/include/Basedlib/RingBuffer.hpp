@@ -5,6 +5,8 @@
 
 namespace Basedlib {
 
+// TODO: make constexpr friendly?
+
 /// @brief Append-only ring buffer. [0] (front) is the oldest item, back is newest.
 template <typename T>
 class RingBuffer {
@@ -53,14 +55,16 @@ public:
 		const RingBuffer& rb;
 		size_t idx;
 	public:
-		Iterator (const RingBuffer& rb, size_t idx) : rb (rb), idx (idx) { }
-		bool operator!= (const Iterator& other) const noexcept { return idx != other.idx; }
-		const T& operator*() const { return rb[idx]; }
-		Iterator& operator++() noexcept { idx++; return *this; }
+		constexpr Iterator (const RingBuffer& rb, size_t idx) : rb (rb), idx (idx) { }
+		constexpr bool operator!= (const Iterator& other) const noexcept {
+			return (rb != other.rb) || (idx != other.idx);
+		}
+		constexpr const T& operator*() const { return rb[idx]; }
+		constexpr Iterator& operator++() noexcept { idx++; return *this; }
 	};
 
-	Iterator begin() const noexcept { return Iterator (*this, 0); }
-	Iterator end() const noexcept { return Iterator (*this, size()); }
+	constexpr Iterator begin() const noexcept { return Iterator (*this, 0); }
+	constexpr Iterator end() const noexcept { return Iterator (*this, size()); }
 };
 
 }
