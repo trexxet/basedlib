@@ -6,11 +6,14 @@
 #include <new>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "Class.hpp"
 #include "Traits.hpp"
 
 namespace Basedlib {
+
+// TODO: use std::inplace_vector when C++26
 
 // Constexpr-friendly vector of fixed capacity
 template <typename T, std::size_t N>
@@ -96,6 +99,19 @@ public:
 		else
 			while (!empty()) pop_back();
 	}
+
+	// TODO: sentinel?
+	template <typename It> requires std::input_iterator<It>
+	constexpr explicit StaticVector (It first, It last) {
+		for (; first != last && !full(); first++)
+			emplace_back (*first);
+	}
+
+	constexpr explicit StaticVector (const std::vector<T>& v) :
+		StaticVector (v.begin(), v.end()) { }
+
+	constexpr explicit StaticVector (std::vector<T>&& v) :
+		StaticVector (std::make_move_iterator (v.begin()), std::make_move_iterator (v.end())) { }
 
 	StaticVector () = default;
 
