@@ -6,9 +6,9 @@
 #include <optional>
 #include <string_view>
 
-#include "Class.hpp"
-#include "Function.hpp"
-#include "PrettyEnum.hpp"
+#include "Basedlib/Class.hpp"
+#include "Basedlib/Core/Function.hpp"
+#include "Basedlib/Meta/PrettyEnum.hpp"
 
 namespace Basedlib::FSM {
 

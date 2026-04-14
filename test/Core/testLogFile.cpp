@@ -1,4 +1,4 @@
-#include "Basedlib/LogFile.hpp"
+#include "Basedlib/Core/LogFile.hpp"
 #include "Basedtest/Suite.hpp"
 
 #include <filesystem>

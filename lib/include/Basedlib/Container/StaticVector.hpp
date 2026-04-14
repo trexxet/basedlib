@@ -7,8 +7,8 @@
 #include <utility>
 #include <vector>
 
-#include "Class.hpp"
-#include "Traits.hpp"
+#include "Basedlib/Class.hpp"
+#include "Basedlib/Meta/Traits.hpp"
 
 namespace Basedlib {
 

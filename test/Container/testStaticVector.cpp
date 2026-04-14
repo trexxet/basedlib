@@ -1,4 +1,4 @@
-#include "Basedlib/StaticVector.hpp"
+#include "Basedlib/Container/StaticVector.hpp"
 #include "Basedtest/Suite.hpp"
 
 #include <concepts>

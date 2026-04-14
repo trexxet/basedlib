@@ -1,4 +1,4 @@
-#include "Basedlib/RingBuffer.hpp"
+#include "Basedlib/Container/RingBuffer.hpp"
 #include "Basedtest/Suite.hpp"
 
 constexpr std::size_t capacity = 3;

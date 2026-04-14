@@ -4,8 +4,8 @@
 #include <expected>
 #include <string_view>
 
-#include "Basedlib/Function.hpp"
-#include "Basedlib/Traits.hpp"
+#include "Basedlib/Core/Function.hpp"
+#include "Basedlib/Meta/Traits.hpp"
 
 #include "Common.hpp"
 

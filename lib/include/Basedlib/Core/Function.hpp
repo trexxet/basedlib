@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "Traits.hpp"
+#include "Basedlib/Meta/Traits.hpp"
 
 namespace Basedlib {
 

@@ -1,4 +1,4 @@
-#include "Basedlib/PrettyEnum.hpp"
+#include "Basedlib/Meta/PrettyEnum.hpp"
 #include "Basedtest/Suite.hpp"
 
 #include <string_view>

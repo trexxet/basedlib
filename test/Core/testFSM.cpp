@@ -1,4 +1,4 @@
-#include "Basedlib/FSM.hpp"
+#include "Basedlib/Core/FSM.hpp"
 #include "Basedtest/Suite.hpp"
 
 #include <format>
@@ -6,7 +6,7 @@
 #include <string_view>
 
 #include "Basedlib/Class.hpp"
-#include "Basedlib/PrettyEnum.hpp"
+#include "Basedlib/Meta/PrettyEnum.hpp"
 
 enum class States { ST_A, ST_B, ST_C, ST_D };
 std::string_view to_string (States st) { return Basedlib::FSM::Enum<States>::to_string (st); }

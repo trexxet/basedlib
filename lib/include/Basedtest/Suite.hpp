@@ -7,7 +7,7 @@
 #include <tuple>
 #include <vector>
 
-#include "Basedlib/Traits.hpp"
+#include "Basedlib/Meta/Traits.hpp"
 
 #include "Common.hpp"
 #include "AssertTest.hpp"

@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "Meta.hpp"
+#include "Reflection.hpp"
 
 /* This would work only for dense enums (values go from 0 to N - 1) */
 

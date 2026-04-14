@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "Class.hpp"
+#include "Basedlib/Class.hpp"
 
 namespace Basedlib {
 
