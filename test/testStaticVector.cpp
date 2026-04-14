@@ -9,6 +9,7 @@
 
 using namespace Basedtest;
 using Basedlib::StaticVector;
+using Basedlib::StaticVectorView;
 
 constinit struct Counters {
 	size_t ctor, dtor, copyCtor, moveCtor, copyAss, moveAss;
@@ -253,6 +254,27 @@ BT_SCENARIO_TEST (test_sv_equal) {
 	BT_SUCCESS;
 }
 
+BT_SCENARIO_TEST (test_sv_view) {
+	StaticVector<int, 4> sv4 {1, 2, 3};
+	StaticVectorView<int> svView = sv4.view();
+
+	BT_ASSERT_EQ (sv4.size(), svView.size());
+	BT_ASSERT_EQ (sv4[0], svView[0]);
+	BT_ASSERT_EQ (sv4[1], svView[1]);
+	BT_ASSERT_EQ (sv4[2], svView[2]);
+
+	StaticVectorView<int> svViewImplicit = sv4;
+	BT_ASSERT_EQ (svView, svViewImplicit);
+
+	StaticVector<int, 8> sv8;
+	sv8.emplace_back (1);
+	sv8.emplace_back (2);
+	sv8.emplace_back (3);
+	BT_ASSERT_EQ (sv4.view(), sv8.view());
+
+	BT_SUCCESS;
+}
+
 consteval int test_sv_consteval () {
 	StaticVector<int, 4> sv;
 	sv.emplace_back (1);
@@ -260,10 +282,17 @@ consteval int test_sv_consteval () {
 	return sv[0] + sv.back();
 }
 
+consteval bool test_sv_consteval_view () {
+	StaticVector<int, 4> sv4 {1, 2, 3};
+	StaticVector<int, 8> sv8 {1, 2, 3};
+	return sv4.view() == sv8.view();
+}
+
 static_assert (std::default_initializable <StaticVector<Foo, 4>>);
 static_assert (std::copy_constructible <StaticVector<Foo, 4>>);
 static_assert (std::move_constructible <StaticVector<Foo, 4>>);
 static_assert (test_sv_consteval() == 3);
+static_assert (test_sv_consteval_view());
 
 int main () {
 	return Suite ("StaticVector", tests (
@@ -279,6 +308,7 @@ int main () {
 		BT_SUITE_SCENARIO (test_sv_copy_self),
 		BT_SUITE_SCENARIO (test_sv_move_self),
 		BT_SUITE_SCENARIO (test_sv_from_vector),
-		BT_SUITE_SCENARIO (test_sv_equal)
+		BT_SUITE_SCENARIO (test_sv_equal),
+		BT_SUITE_SCENARIO (test_sv_view)
 	)).run_rc();	
 }

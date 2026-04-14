@@ -15,17 +15,46 @@ namespace Basedlib {
 // TODO: use std::inplace_vector when C++26
 
 // Constexpr-friendly vector of fixed capacity
+
+template <typename T>
+struct StaticVectorSlot {
+	union { std::byte dummy; T value; };
+	constexpr StaticVectorSlot () noexcept : dummy {} { }
+	constexpr ~StaticVectorSlot () noexcept { }
+	BASED_CLASS_NO_COPY_MOVE (StaticVectorSlot);
+};
+
+template <typename T>
+class StaticVectorView {
+	const StaticVectorSlot<T>* data_ = nullptr;
+	std::size_t size_ = 0;
+
+public:
+	constexpr std::size_t size () const noexcept { return size_; }
+
+	constexpr const T& operator[] (std::size_t idx) const noexcept {
+		assert (data_ && "StaticVectorView: data_ = nullptr");
+		assert (idx < size() && "StaticVectorView: [idx] >= size()");
+		return *std::launder (std::addressof (data_[idx].value));
+	}
+
+	constexpr bool operator== (const StaticVectorView<T>& other) const {
+		if (size() != other.size()) return false;
+		for (std::size_t i = 0; i < size_; i++)
+			if ((*this)[i] != other[i])
+				return false;
+		return true;
+	}
+
+	StaticVectorView () = delete;
+	constexpr StaticVectorView (const StaticVectorSlot<T>* data, std::size_t size) noexcept
+		: data_(data), size_(size) { }
+};
+
 template <typename T, std::size_t N>
 requires std::is_nothrow_destructible_v<T>
 class StaticVector {
-	struct Slot {
-		union { std::byte dummy; T value; };
-		constexpr Slot () noexcept : dummy {} { }
-		constexpr ~Slot () noexcept { }
-		BASED_CLASS_NO_COPY_MOVE (Slot);
-	};
-
-	Slot data_[N];
+	StaticVectorSlot<T> data_[N];
 	std::size_t size_ = 0;
 
 	constexpr T* addr (std::size_t idx) noexcept {
@@ -110,6 +139,12 @@ public:
 				return false;
 		return true;
 	}
+
+	constexpr StaticVectorView<T> view () const noexcept {
+		return StaticVectorView<T> (data_, size_);
+	}
+
+	constexpr operator StaticVectorView<T> () const noexcept { return view(); }
 
 	// TODO: sentinel?
 	template <typename It> requires std::input_iterator<It>
