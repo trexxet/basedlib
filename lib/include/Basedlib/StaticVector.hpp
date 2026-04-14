@@ -213,3 +213,15 @@ template <typename... T> requires all_same<T...>
 StaticVector (T...) -> StaticVector <first_variadic_t<T...>, sizeof...(T)>;
 
 }
+
+namespace std {
+	template <
+		typename T, size_t N, size_t M,
+		template <class> class TQual,
+		template <class> class UQual
+	> struct basic_common_reference <
+		Basedlib::StaticVector<T, N>,
+		Basedlib::StaticVector<T, M>,
+		TQual, UQual
+	> { using type = Basedlib::StaticVectorView<T>; };
+}

@@ -247,8 +247,8 @@ BT_SCENARIO_TEST (test_sv_equal) {
 	StaticVector<int, 4> sv4 {1, 2};
 
 	BT_ASSERT_NE (sv1, sv2);
-	BT_ASSERT (sv1 != sv3);
-	BT_ASSERT (sv1 == sv4);
+	BT_ASSERT_NE (sv1, sv3);
+	BT_ASSERT_EQ (sv1, sv4);
 	BT_ASSERT_NE (sv3, sv4);
 
 	BT_SUCCESS;
@@ -291,6 +291,12 @@ consteval bool test_sv_consteval_view () {
 static_assert (std::default_initializable <StaticVector<Foo, 4>>);
 static_assert (std::copy_constructible <StaticVector<Foo, 4>>);
 static_assert (std::move_constructible <StaticVector<Foo, 4>>);
+static_assert (std::equality_comparable_with <
+	StaticVector<int, 8>,
+	StaticVector<int, 4>&
+>);
+static_assert (std::equality_comparable <StaticVectorView<int>>);
+
 static_assert (test_sv_consteval() == 3);
 static_assert (test_sv_consteval_view());
 
