@@ -115,6 +115,10 @@ public:
 
 	StaticVector () = default;
 
+	StaticVector (std::initializer_list<T> list) requires std::copy_constructible<T> {
+		for (const T& item : list) emplace_back (item);
+	}
+
 	constexpr ~StaticVector () noexcept { clear(); }
 
 	constexpr BASED_CLASS_COPY_CONSTRUCTOR (StaticVector) requires std::copy_constructible<T> {
@@ -124,7 +128,7 @@ public:
 	BASED_CLASS_COPY_CONSTRUCTOR (StaticVector) requires (!std::copy_constructible<T>) = delete;
 
 	constexpr BASED_CLASS_MOVE_CONSTRUCTOR (StaticVector) requires std::move_constructible<T> {
-		do_move (other);
+		do_move (std::move (other));
 	}
 	
 	BASED_CLASS_MOVE_CONSTRUCTOR (StaticVector) requires (!std::move_constructible<T>) = delete;
@@ -137,7 +141,7 @@ public:
 	BASED_CLASS_COPY_ASSIGNMENT (StaticVector) requires (!std::copy_constructible<T>) = delete;
 
 	constexpr BASED_CLASS_MOVE_ASSIGNMENT (StaticVector) requires std::move_constructible<T> {
-		if (this != &other) do_move (other);
+		if (this != &other) do_move (std::move (other));
 		return *this;
 	}
 
