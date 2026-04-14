@@ -14,28 +14,28 @@
 
 namespace Basedlib {
 
-template <typename T, size_t maxIndex = 32> requires std::is_enum_v<T>
+template <typename T, std::size_t maxIndex = 32> requires std::is_enum_v<T>
 struct PrettyEnum {
 	using Enum = T;
 	using Meta = Meta<T>;
 
 private:
-	template<size_t i>
+	template<std::size_t i>
 	static consteval bool is_valid_idx () {
 		constexpr char c = Meta::template v_name<val (i)>()[0];
 		return !(c >= '0' && c <= '9');
 	}
 
-	template<size_t... i>
-	static consteval size_t count_valid_idxs (std::index_sequence<i...>) {
-		return (static_cast<size_t> (is_valid_idx<i>()) + ...);
+	template<std::size_t... i>
+	static consteval std::size_t count_valid_idxs (std::index_sequence<i...>) {
+		return (static_cast<std::size_t> (is_valid_idx<i>()) + ...);
 	}
 
 public:
-	static constexpr size_t idx (T i) noexcept { return static_cast<size_t> (i); }
-	static constexpr T val (size_t i) noexcept { return static_cast<T> (i); }
-	static constexpr size_t size = count_valid_idxs (std::make_index_sequence<maxIndex>());
-	static constexpr bool has_idx (size_t i) noexcept { return i < size; }
+	static constexpr std::size_t idx (T i) noexcept { return static_cast<std::size_t> (i); }
+	static constexpr T val (std::size_t i) noexcept { return static_cast<T> (i); }
+	static constexpr std::size_t size = count_valid_idxs (std::make_index_sequence<maxIndex>());
+	static constexpr bool has_idx (std::size_t i) noexcept { return i < size; }
 
 private:
 	template<bool scoped>
@@ -54,7 +54,7 @@ public:
 
 template <typename>
 inline constexpr bool is_PrettyEnum = false;
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 inline constexpr bool is_PrettyEnum <PrettyEnum<T, N>> = true;
 template <typename T>
 concept PrettyEnumT = is_PrettyEnum <std::remove_cvref_t<T>>;

@@ -12,7 +12,7 @@
 
 namespace Basedlib::FSM {
 
-template <typename T, size_t maxIndex = 32>
+template <typename T, std::size_t maxIndex = 32>
 using Enum = PrettyEnum <T, maxIndex>;
 
 using LogCallbackT = Function <void (std::string_view)>;

@@ -216,7 +216,7 @@ StaticVector (T...) -> StaticVector <first_variadic_t<T...>, sizeof...(T)>;
 
 namespace std {
 	template <
-		typename T, size_t N, size_t M,
+		typename T, std::size_t N, std::size_t M,
 		template <class> class TQual,
 		template <class> class UQual
 	> struct basic_common_reference <

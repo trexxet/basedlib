@@ -21,7 +21,7 @@ concept specialization_of = is_specialization_of <std::remove_cvref_t<T>, Templa
 
 //// Fetch variadic template types
 
-template <size_t N, typename... Ts> requires (sizeof...(Ts) > N)
+template <std::size_t N, typename... Ts> requires (sizeof...(Ts) > N)
 using variadic_t = std::tuple_element_t <N, std::tuple<Ts...>>;
 
 template <typename... Ts>

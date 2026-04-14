@@ -16,8 +16,8 @@ enum class Events {
 };
 
 struct Context {
-	size_t evA_count = 0;
-	size_t evB_count = 0;
+	std::size_t evA_count = 0;
+	std::size_t evB_count = 0;
 };
 
 /* Note that callbacks won't have a Context argument if Context is nullptr_t (as by default).

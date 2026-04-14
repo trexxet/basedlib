@@ -6,6 +6,7 @@ Some stuff designed to be used with [Based Engine](https://gitlab.com/trexxet/ba
 * Event-driven FSM without jump tables
 * Simple static reflection for type names & values (using `__PRETTY_FUNCTION__`)
 * Enum static reflection for getting field name (simplier alternative to magic_enum)
+* Constexpr-friendly static vector
 * Helper traits & concepts (`specialization_of`, `variadic_t`, `all_same` etc.)
 * Dumb debug file logger
 * Thread-safe FIFO queue

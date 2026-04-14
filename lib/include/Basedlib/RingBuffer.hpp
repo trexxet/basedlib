@@ -12,14 +12,14 @@ template <typename T>
 class RingBuffer {
 	std::vector<T> data;
 	/// @brief head is the next write position
-	size_t head = 0;
-	size_t cap;
+	std::size_t head = 0;
+	std::size_t cap;
 
-	size_t wrap (size_t pos) const noexcept { return pos == cap ? 0 : pos; }
+	std::size_t wrap (std::size_t pos) const noexcept { return pos == cap ? 0 : pos; }
 
 public:
-	size_t capacity () const noexcept { return cap; }
-	size_t size () const noexcept { return data.size(); }
+	std::size_t capacity () const noexcept { return cap; }
+	std::size_t size () const noexcept { return data.size(); }
 	bool full () const noexcept { return size() == cap; }
 	bool empty () const noexcept { return size() == 0; }
 
@@ -29,7 +29,7 @@ public:
 		head = wrap (head + 1);
 	}
 
-	const T& operator[] (size_t idx) const noexcept {
+	const T& operator[] (std::size_t idx) const noexcept {
 		assert (idx < size() && "RingBuffer: [idx] >= size()");
 		if (full()) [[likely]] idx = wrap (head + idx);
 		return data[idx];
@@ -45,7 +45,7 @@ public:
 		return full() ? data[head] : data[0];
 	}
 
-	RingBuffer (size_t capacity) : cap (capacity) {
+	RingBuffer (std::size_t capacity) : cap (capacity) {
 		assert (cap > 0 && "RingBuffer must have capacity > 0");
 		data.reserve (cap);
 	}
@@ -53,9 +53,9 @@ public:
 
 	class Iterator {
 		const RingBuffer& rb;
-		size_t idx;
+		std::size_t idx;
 	public:
-		constexpr Iterator (const RingBuffer& rb, size_t idx) : rb (rb), idx (idx) { }
+		constexpr Iterator (const RingBuffer& rb, std::size_t idx) : rb (rb), idx (idx) { }
 		constexpr bool operator!= (const Iterator& other) const noexcept {
 			return (rb != other.rb) || (idx != other.idx);
 		}

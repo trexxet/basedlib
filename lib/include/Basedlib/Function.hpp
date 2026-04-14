@@ -83,8 +83,8 @@ struct FunctionTraits;
 template <typename Ret, typename... Args>
 struct FunctionTraits <Ret (Args...)> {
 	using ReturnType = Ret;
-	static constexpr size_t argc = sizeof...(Args);
-	template <size_t i>
+	static constexpr std::size_t argc = sizeof...(Args);
+	template <std::size_t i>
 	using ArgType = variadic_t<i, Args...>;
 };
 

@@ -12,11 +12,11 @@ using Basedlib::StaticVector;
 using Basedlib::StaticVectorView;
 
 constinit struct Counters {
-	size_t ctor, dtor, copyCtor, moveCtor, copyAss, moveAss;
+	std::size_t ctor, dtor, copyCtor, moveCtor, copyAss, moveAss;
 	void reset () {
 		ctor = 0; dtor = 0; copyCtor = 0; moveCtor = 0; copyAss = 0; moveAss = 0;
 	}
-	ssize_t diff () const { return (ctor + copyCtor + moveCtor) - dtor; }
+	std::size_t diff () const { return (ctor + copyCtor + moveCtor) - dtor; }
 	std::string to_string () const {
 		return std::format (
 			"{{ctor = {} dtor = {} copyCtor = {} moveCtor = {} copyAss = {} moveAss = {}}}",

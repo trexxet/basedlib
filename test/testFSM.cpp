@@ -14,14 +14,14 @@ std::string_view to_string (States st) { return Basedlib::FSM::Enum<States>::to_
 enum class Events { EV_A, EV_B };
 
 struct Counters {
-	size_t evA_count = 0;
-	size_t evB_count = 0;
+	std::size_t evA_count = 0;
+	std::size_t evB_count = 0;
 
-	size_t stA_enter = 0;
-	size_t stA_exit = 0;
-	size_t stB_enter = 0;
-	size_t stB_exit = 0;
-	size_t stC_enter = 0;
+	std::size_t stA_enter = 0;
+	std::size_t stA_exit = 0;
+	std::size_t stB_enter = 0;
+	std::size_t stB_exit = 0;
+	std::size_t stC_enter = 0;
 
 	BASED_CLASS_DEFAULT_EQUALITY (Counters);
 

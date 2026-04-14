@@ -65,15 +65,15 @@ BT_SCENARIO_TEST (test_pretty_static) {
 	BT_ASSERT_EQ (PrettyColor::size, 3);
 
 	BT_ASSERT_RC (Suite ("Static PrettyColor::val", cases <input_as_constref<PrettyColor::val>> (
-		ValueCase {"prettycolor::val_r", size_t{0}, Color::Red},
-		ValueCase {"prettycolor::val_g", size_t{1}, Color::Green},
-		ValueCase {"prettycolor::val_b", size_t{2}, Color::Blue}
+		ValueCase {"prettycolor::val_r", std::size_t{0}, Color::Red},
+		ValueCase {"prettycolor::val_g", std::size_t{1}, Color::Green},
+		ValueCase {"prettycolor::val_b", std::size_t{2}, Color::Blue}
 	)).run_rc());
 
 	BT_ASSERT_RC (Suite ("Static PrettyColor::idx", cases <input_as_constref<PrettyColor::idx>> (
-		ValueCase {"prettycolor::idx_r", Color::Red, size_t{0}},
-		ValueCase {"prettycolor::idx_g", Color::Green, size_t{1}},
-		ValueCase {"prettycolor::idx_b", Color::Blue, size_t{2}}
+		ValueCase {"prettycolor::idx_r", Color::Red, std::size_t{0}},
+		ValueCase {"prettycolor::idx_g", Color::Green, std::size_t{1}},
+		ValueCase {"prettycolor::idx_b", Color::Blue, std::size_t{2}}
 	)).run_rc());
 
 	BT_ASSERT_RC (Suite ("Static PrettyColor::to_string", cases <input_as_constref<PrettyColor::to_string>> (
@@ -92,7 +92,7 @@ BT_SCENARIO_TEST (test_pretty_static) {
 }
 
 BT_SCENARIO_TEST (test_pretty_runtime) {
-	volatile size_t i = Basedtest::black_box (2);
+	volatile std::size_t i = Basedtest::black_box (2);
 	volatile Color c = PrettyColor::val (i);
 	BT_ASSERT_EQ (c, Color::Blue);
 	BT_ASSERT_EQ (PrettyColor::idx (c), i);

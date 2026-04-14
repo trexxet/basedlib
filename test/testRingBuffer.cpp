@@ -1,7 +1,7 @@
 #include "Basedlib/RingBuffer.hpp"
 #include "Basedtest/Suite.hpp"
 
-constexpr size_t capacity = 3;
+constexpr std::size_t capacity = 3;
 
 BT_SCENARIO_TEST (test_rb_create) {
 	Basedlib::RingBuffer<int> rb (capacity);
