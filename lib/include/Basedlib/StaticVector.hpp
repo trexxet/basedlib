@@ -1,9 +1,8 @@
 #pragma once
 
 #include <cassert>
-#include <cstddef>
 #include <concepts>
-#include <new>
+#include <memory>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -19,31 +18,34 @@ namespace Basedlib {
 template <typename T, std::size_t N>
 requires std::is_nothrow_destructible_v<T>
 class StaticVector {
-	constexpr static std::size_t sizen (std::size_t n) noexcept { return n * sizeof(T); }
+	struct Slot {
+		union { std::byte dummy; T value; };
+		constexpr Slot () noexcept : dummy {} { }
+		constexpr ~Slot () noexcept { }
+		BASED_CLASS_NO_COPY_MOVE (Slot);
+	};
 
-	alignas (T) std::byte data_[sizen(N)];
+	Slot data_[N];
 	std::size_t size_ = 0;
 
-	constexpr std::byte* raw_addr (std::size_t idx) noexcept { return data_ + sizen (idx); };
-	constexpr const std::byte* raw_addr (std::size_t idx) const noexcept { return data_ + sizen (idx); };
 	constexpr T* addr (std::size_t idx) noexcept {
-		return std::launder (reinterpret_cast <T*> (raw_addr (idx)));
+		return std::launder (std::addressof (data_[idx].value));
 	}
 	constexpr const T* addr (std::size_t idx) const noexcept {
-		return std::launder (reinterpret_cast <const T*> (raw_addr (idx)));
+		return std::launder (std::addressof (data_[idx].value));
 	}
 
 	constexpr void do_copy (const StaticVector& other) {
 		clear();
 		for (std::size_t i = 0; i < other.size_; i++)
-			new (addr (i)) T (other[i]);
+			std::construct_at (addr (i), other[i]);
 		size_ = other.size_;
 	}
 
 	constexpr void do_move (StaticVector&& other) {
 		clear();
 		for (std::size_t i = 0; i < other.size_; i++)
-			new (addr (i)) T (std::move (other[i]));
+			std::construct_at (addr (i), std::move (other[i]));
 		size_ = other.size_;
 		other.clear();
 	}
@@ -81,14 +83,14 @@ public:
 	constexpr void pop_back () {
 		assert (!empty() && "StaticVector: pop_back() on empty");
 		if constexpr (!std::is_trivially_destructible_v<T>)
-			addr (size_ - 1) -> ~T();
+			std::destroy_at (addr (size_ - 1));
 		size_--;
 	}
 
 	template <typename... Args>
 	constexpr T& emplace_back (Args&&... args) {
 		assert (!full() && "StaticVector: emplace_back() on full");
-		T* p = new (addr (size_)) T (std::forward<Args> (args)...);
+		T* p = std::construct_at (addr (size_), std::forward<Args> (args)...);
 		size_++;
 		return *std::launder (p);
 	}

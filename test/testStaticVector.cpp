@@ -27,6 +27,7 @@ constinit struct Counters {
 
 struct Foo {
 	int x;
+	Foo () = delete;
 	Foo (int v) : x (v) { counters.ctor++; }
 	~Foo () noexcept { counters.dtor++; }
 	BASED_CLASS_COPY_CONSTRUCTOR (Foo) { x = other.x; counters.copyCtor++; }
@@ -238,18 +239,17 @@ BT_SCENARIO_TEST (test_sv_from_vector) {
 	BT_SUCCESS;
 }
 
-/*
 consteval int test_sv_consteval () {
 	StaticVector<int, 4> sv;
 	sv.emplace_back (1);
 	sv.emplace_back (2);
 	return sv[0] + sv.back();
 }
-*/
 
+static_assert (std::default_initializable <StaticVector<Foo, 4>>);
 static_assert (std::copy_constructible <StaticVector<Foo, 4>>);
 static_assert (std::move_constructible <StaticVector<Foo, 4>>);
-//static_assert (test_sv_consteval() == 3);
+static_assert (test_sv_consteval() == 3);
 
 int main () {
 	return Suite ("StaticVector", tests (
