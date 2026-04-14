@@ -26,29 +26,29 @@ constexpr std::string_view to_scoped_string (Color c) {
 }
 
 using PrettyColor = Basedlib::PrettyEnum<Color>;
-using MetaColor = PrettyColor::Meta;
+using ReflectionColor = PrettyColor::Reflection;
 
 template <Color c, bool scoped = false>
-constexpr auto make_meta_v_name_test (std::string_view name) {
+constexpr auto make_reflection_v_name_test (std::string_view name) {
 	return ValueTest { name,
 		[] { if constexpr (scoped) return to_scoped_string (c); return to_string (c); } (),
-		[] { return MetaColor::v_name<c, scoped>(); }
+		[] { return ReflectionColor::v_name<c, scoped>(); }
 	};
 };
 
-BT_SCENARIO_TEST (test_meta) {
-	BT_ASSERT_EQ (MetaColor::t_name(), "Color");
+BT_SCENARIO_TEST (test_reflection) {
+	BT_ASSERT_EQ (ReflectionColor::t_name(), "Color");
 
-	BT_ASSERT_RC (Suite ("Meta::v_name", tests (
-		make_meta_v_name_test <Color::Red> ("meta::v_name_r"),
-		make_meta_v_name_test <Color::Green> ("meta::v_name_g"),
-		make_meta_v_name_test <Color::Blue> ("meta::v_name_b")
+	BT_ASSERT_RC (Suite ("Reflection::v_name", tests (
+		make_reflection_v_name_test <Color::Red> ("reflection::v_name_r"),
+		make_reflection_v_name_test <Color::Green> ("reflection::v_name_g"),
+		make_reflection_v_name_test <Color::Blue> ("reflection::v_name_b")
 	)).run_rc());
 
-	BT_ASSERT_RC (Suite ("Meta::v_name_scoped", tests (
-		make_meta_v_name_test <Color::Red, true> ("meta::v_name_scoped_r"),
-		make_meta_v_name_test <Color::Green, true> ("meta::v_name_scoped_g"),
-		make_meta_v_name_test <Color::Blue, true> ("meta::v_name_scoped_b")
+	BT_ASSERT_RC (Suite ("Reflection::v_name_scoped", tests (
+		make_reflection_v_name_test <Color::Red, true> ("reflection::v_name_scoped_r"),
+		make_reflection_v_name_test <Color::Green, true> ("reflection::v_name_scoped_g"),
+		make_reflection_v_name_test <Color::Blue, true> ("reflection::v_name_scoped_b")
 	)).run_rc());
 
 	BT_SUCCESS;
@@ -103,7 +103,7 @@ BT_SCENARIO_TEST (test_pretty_runtime) {
 
 int main () {
 	return Basedtest::Suite ("PrettyEnum", Basedtest::tests (
-		BT_SUITE_SCENARIO (test_meta),
+		BT_SUITE_SCENARIO (test_reflection),
 		BT_SUITE_SCENARIO (test_pretty_static),
 		BT_SUITE_SCENARIO (test_pretty_runtime)
 	)).run_rc();

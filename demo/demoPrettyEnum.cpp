@@ -12,9 +12,9 @@ enum class Color {
 
 // If enum has > 32 fields, the range should be increased in the PrettyEnum template arg
 using PrettyColor = Basedlib::PrettyEnum<Color>;
-using MetaColor = PrettyColor::Meta; // same as Basedlib::Meta<Color>;
+using ReflectionColor = PrettyColor::Reflection; // same as Basedlib::Reflection<Color>;
 
-/* Meta can be used for compile-time values only, but for many types (I suppose).
+/* Reflection can be used for compile-time values only, but for many types (I suppose).
  * PrettyEnum can be used for dense enums both in compile-time and runtime.
  */
 
@@ -29,10 +29,10 @@ int main () {
 		return 0;
 	}
 
-	std::print ("Type: {}, size: {}\n", MetaColor::t_name(), PrettyColor::size);
+	std::print ("Type: {}, size: {}\n", ReflectionColor::t_name(), PrettyColor::size);
 	std::print ("Runtime scoped/unscoped: {}, {}\n", PrettyColor::to_scoped_string(c), PrettyColor::to_string(c));
 	std::print ("Static scoped/unscoped using PrettyColor: {}, {}\n", PrettyColor::to_scoped_string(Color::Red), PrettyColor::to_string(Color::Red));
-	std::print ("Same but using MetaColor: {}, {}\n", MetaColor::v_name<Color::Green, true>(), MetaColor::v_name<Color::Green>());
+	std::print ("Same but using ReflectionColor: {}, {}\n", ReflectionColor::v_name<Color::Green, true>(), ReflectionColor::v_name<Color::Green>());
 
 	return 0;
 }

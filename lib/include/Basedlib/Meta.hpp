@@ -7,7 +7,7 @@
 namespace Basedlib {
 
 template <typename T>
-struct Meta {
+struct Reflection {
 	static consteval std::string_view t_name () {
 		std::string_view name = __PRETTY_FUNCTION__;
 		std::size_t start = name.find ("T = ") + 4;
