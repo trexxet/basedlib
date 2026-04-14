@@ -102,6 +102,15 @@ public:
 			while (!empty()) pop_back();
 	}
 
+	template <std::size_t M>
+	constexpr bool operator== (const StaticVector<T, M>& other) const {
+		if (size() != other.size()) return false;
+		for (std::size_t i = 0; i < size_; i++)
+			if ((*this)[i] != other[i])
+				return false;
+		return true;
+	}
+
 	// TODO: sentinel?
 	template <typename It> requires std::input_iterator<It>
 	constexpr explicit StaticVector (It first, It last) {
@@ -117,7 +126,7 @@ public:
 
 	StaticVector () = default;
 
-	StaticVector (std::initializer_list<T> list) requires std::copy_constructible<T> {
+	constexpr StaticVector (std::initializer_list<T> list) requires std::copy_constructible<T> {
 		for (const T& item : list) emplace_back (item);
 	}
 

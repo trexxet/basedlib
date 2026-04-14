@@ -239,6 +239,20 @@ BT_SCENARIO_TEST (test_sv_from_vector) {
 	BT_SUCCESS;
 }
 
+BT_SCENARIO_TEST (test_sv_equal) {
+	StaticVector<int, 2> sv1 {1, 2};
+	StaticVector<int, 2> sv2 {1, 3};
+	StaticVector<int, 4> sv3 {1, 2, 3};
+	StaticVector<int, 4> sv4 {1, 2};
+
+	BT_ASSERT_NE (sv1, sv2);
+	BT_ASSERT (sv1 != sv3);
+	BT_ASSERT (sv1 == sv4);
+	BT_ASSERT_NE (sv3, sv4);
+
+	BT_SUCCESS;
+}
+
 consteval int test_sv_consteval () {
 	StaticVector<int, 4> sv;
 	sv.emplace_back (1);
@@ -264,6 +278,7 @@ int main () {
 		BT_SUITE_SCENARIO (test_sv_move_ass),
 		BT_SUITE_SCENARIO (test_sv_copy_self),
 		BT_SUITE_SCENARIO (test_sv_move_self),
-		BT_SUITE_SCENARIO (test_sv_from_vector)
+		BT_SUITE_SCENARIO (test_sv_from_vector),
+		BT_SUITE_SCENARIO (test_sv_equal)
 	)).run_rc();	
 }
