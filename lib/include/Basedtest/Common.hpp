@@ -2,6 +2,8 @@
 
 #include <format>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 namespace Basedtest {
 
@@ -13,6 +15,8 @@ std::string format_value (const T& val) {
 		return std::string (val.to_string());
 	else if constexpr (requires { to_string (val); })
 		return std::string (to_string (val));
+	else if constexpr (std::is_enum_v <T>)
+		return std::format ("{}", std::to_underlying (val));
 	else return "<unprintable>";
 }
 
