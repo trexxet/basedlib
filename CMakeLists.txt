@@ -9,6 +9,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_SCAN_FOR_MODULES FALSE)
 
+if(MINGW)
+	add_compile_options(-fno-ms-extensions)
+endif()
+
 add_subdirectory(lib)
 
 if(BASEDLIB_BUILD_TESTS)
