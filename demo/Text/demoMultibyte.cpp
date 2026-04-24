@@ -30,7 +30,7 @@ int main () {
 	std::string mbstr1 = Basedlib::Text::wcs_to_mbs (wcstr);
 	std::print ("{}", mbstr1);
 
-	std::print ("End!");
+	std::print ("End!\n");
 
 	return 0;
 }

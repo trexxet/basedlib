@@ -27,7 +27,9 @@ inline std::wstring mbs_to_wcs (std::string_view mbs) {
 	std::mbstate_t state {};
 	std::size_t len = std::mbsrtowcs (nullptr, &src, 0, &state);
 	if (len == static_cast<std::size_t> (-1)) [[unlikely]] return L"";
-	std::wstring wcs (len + 1, 0);
+	src = mbs.data();
+	state = {};
+	std::wstring wcs (len, 0);
 	std::mbsrtowcs (wcs.data(), &src, wcs.size(), &state);
 #endif
 	return wcs;
@@ -47,6 +49,8 @@ inline std::string wcs_to_mbs (std::wstring_view wcs) {
 	std::mbstate_t state {};
 	std::size_t len = std::wcsrtombs (nullptr, &wsrc, 0, &state);
 	if (len == static_cast<std::size_t> (-1)) [[unlikely]] return "";
+	wsrc = wcs.data();
+	state = {};
 	std::string mbs (len, 0);
 	std::wcsrtombs (mbs.data(), &wsrc, mbs.size(), &state);
 #endif
