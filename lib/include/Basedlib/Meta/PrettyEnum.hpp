@@ -17,12 +17,12 @@ namespace Basedlib {
 template <typename T, std::size_t maxIndex = 32> requires std::is_enum_v<T>
 struct PrettyEnum {
 	using Enum = T;
-	using Reflection = Reflection<T>;
+	using ReflectType = Reflection<T>;
 
 private:
 	template<std::size_t i>
 	static consteval bool is_valid_idx () {
-		constexpr char c = Reflection::template v_name<val (i)>()[0];
+		constexpr char c = ReflectType::template v_name<val (i)>()[0];
 		return !(c >= '0' && c <= '9');
 	}
 
@@ -40,7 +40,7 @@ public:
 private:
 	template<bool scoped>
 	static constexpr auto get_names = [] <std::size_t... I> (std::index_sequence<I...>) {
-		return std::array { Reflection::template v_name<val (I), scoped>()... };
+		return std::array { ReflectType::template v_name<val (I), scoped>()... };
 	};
 
 	static constexpr auto validIdxSequence = std::make_index_sequence <size> ();
